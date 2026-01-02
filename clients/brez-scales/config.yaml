@@ -1,0 +1,109 @@
+# BREZ SCALES - Configuração do Cliente
+# Projeto Piloto para Automação CMO
+# Atualizado: 2026-01-02
+
+client:
+  id: CLI_001
+  name: "Brez Scales"
+  status: active
+  pilot: true
+  onboarding_date: "2026-01-02"
+
+# Stack Tecnológico (CONFIRMADO via screenshot)
+stack:
+  ads:
+    meta:
+      enabled: true
+      account_id: "act_1202800550735727"
+      account_name: "Ads Manager - Brez"
+      pixel_id: ""  # Preencher
+      business_id: ""  # Preencher
+    google:
+      enabled: true
+      account_name: "Brez - Google Ads"
+      customer_id: ""  # Preencher
+
+  crm:
+    platform: "GoHighLevel"
+    account_name: "GHL Brez Marketing"
+    api_key: ""  # Preencher
+    subaccount_id: ""  # Preencher
+
+  funnel:
+    platform: "ClickFunnels/Clarity"
+    account_name: "Call Funnel - Clarity"
+    analytics: "Analytics | Call Funnel"
+
+  video:
+    platform: "VTurb"
+    account_name: "VTurb"
+    # Para VSLs e páginas de vídeo
+
+  payments:
+    platform: "Whop"
+    account_name: "Brez | Whop"
+    # Membership/pagamentos
+
+  forms:
+    platform: "Typeform"
+    account_name: "Typeform - Brez"
+
+  chat:
+    platform: "ManyChat"
+    account_name: "Brez - Manychat"
+    # Automação de DM/chat
+
+  storage:
+    platform: "Google Drive"
+    folder_id: ""  # Preencher
+
+  integrations:
+    platform: "Zapier"
+    account_name: "BREZ | Zapier"
+
+# Tracker (A CRIAR)
+tracking:
+  platform: "Google Sheets"
+  spreadsheet_id: ""  # Será criado
+  metricas_funil: []  # Rodrigo vai definir
+
+# Templates de Campanha
+campaign_templates:
+  cold_traffic:
+    name: "Brez - Cold - {HOOK}"
+    objective: "CONVERSIONS"
+    daily_budget: 50
+
+  retargeting:
+    name: "Brez - RTG - {DAYS}d"
+    objective: "CONVERSIONS"
+    daily_budget: 30
+
+# Métricas e Thresholds (ajustar conforme funil)
+metrics:
+  targets:
+    daily_spend: 500
+    cpl_target: 35
+    roas_target: 4
+
+  alerts:
+    cpl_max: 50
+    roas_min: 2
+    ctr_min: 0.8
+
+# Equipe Designada
+team:
+  account_manager: "Rodrigo"
+  copywriter: "Adam"
+
+notes: |
+  Stack confirmado via screenshot em 2026-01-02:
+  - Meta Ads + Google Ads (tráfego)
+  - GoHighLevel (CRM)
+  - ClickFunnels/Clarity (funil)
+  - VTurb (vídeos/VSL)
+  - Whop (pagamentos)
+  - Typeform (formulários)
+  - ManyChat (chat/DM)
+  - Zapier (integrações)
+  - Google Drive (storage)

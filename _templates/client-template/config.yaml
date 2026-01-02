@@ -1,0 +1,112 @@
+# ============================================
+# TEMPLATE: Configuração de Cliente
+# ============================================
+# Como usar:
+# 1. Copie esta pasta para /clients/nome-do-cliente/
+# 2. Renomeie e preencha os campos abaixo
+# 3. Delete este comentário de instrução
+# ============================================
+
+client:
+  id: "CLI_XXX"                    # ID único do cliente
+  name: "Nome do Cliente"          # Nome de exibição
+  status: "active"                 # active | paused | onboarding
+  start_date: "2026-01-01"         # Data de início
+
+# ============================================
+# STACK DE FERRAMENTAS
+# ============================================
+stack:
+  # ANÚNCIOS
+  ads:
+    meta:
+      enabled: false
+      account_id: "act_XXXXXXXXX"
+      pixel_id: ""
+    google:
+      enabled: false
+      customer_id: ""
+    tiktok:
+      enabled: false
+
+  # CRM
+  crm:
+    platform: ""                   # GoHighLevel | HubSpot | Pipedrive | ClickFunnels
+    api_key: ""
+    location_id: ""
+
+  # CALENDÁRIO
+  calendar:
+    platform: ""                   # Calendly | Cal.com | GHL
+    api_key: ""
+
+  # PAGAMENTOS
+  payments:
+    platform: ""                   # Stripe | Hotmart | Whop | PayPal
+    api_key: ""
+
+  # COMUNICAÇÃO
+  communication:
+    whatsapp: false
+    email_platform: ""             # ConvertKit | ActiveCampaign | Mailchimp
+
+  # INTEGRAÇÕES
+  integrations:
+    zapier: false
+    make: false
+
+  # STORAGE
+  storage:
+    platform: ""                   # Google Drive | Dropbox
+    folder_id: ""
+
+# ============================================
+# MÉTRICAS E METAS
+# ============================================
+metrics:
+  targets:
+    daily_spend: 500               # Budget diário ($)
+    cpl_target: 35                 # CPL meta ($)
+    roas_target: 4                 # ROAS meta (x)
+    calls_per_day: 5               # Calls agendadas/dia
+    sales_per_week: 10             # Vendas/semana
+
+  alerts:
+    cpl_max: 50                    # Alertar se CPL > X
+    roas_min: 2                    # Alertar se ROAS < X
+    ctr_min: 0.8                   # Alertar se CTR < X%
+    frequency_max: 3               # Alertar se frequência > X
+
+# ============================================
+# TEMPLATES DE CAMPANHA
+# ============================================
+campaign_templates:
+  cold:
+    name_pattern: "{CLIENT} - Cold - {DESCRIPTION}"
+    objective: "CONVERSIONS"
+    daily_budget: 50
+
+  retargeting:
+    name_pattern: "{CLIENT} - RTG - {DAYS}d"
+    objective: "CONVERSIONS"
+    daily_budget: 30
+
+  lookalike:
+    name_pattern: "{CLIENT} - LAL - {SOURCE}"
+    objective: "CONVERSIONS"
+    daily_budget: 100
+
+# ============================================
+# EQUIPE
+# ============================================
+team:
+  account_manager: ""
+  copywriter: ""
+  setters: []
+  closers: []
+
+# ============================================
+# NOTAS
+# ============================================
+notes: |
+  Adicione notas importantes sobre o cliente aqui.
