@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "timestamp": "2026-01-03T15:43:44.740754",
+    "kpi": "roas",
+    "value": 1.5065375714522318,
+    "level": "warning",
+    "action": "OPTIMIZE_TARGETING",
+    "agent": "data-pulse",
+    "command": "analyze_audiences",
+    "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-03T15:43:44.740885",
+    "kpi": "cpp",
+    "value": 25.678275862068965,
+    "level": "warning",
+    "action": "REVIEW_CREATIVES",
+    "agent": "copy-forge",
+    "command": "generate_variations",
+    "urgency": "within_24h"
+  }
+]

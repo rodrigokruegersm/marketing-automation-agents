@@ -1,5 +1,5 @@
 # Daily Pulse - 2026-01-03
-## Status: 🟢 HEALTHY
+## Status: 🟡 WARNING
 
 ---
 
@@ -7,40 +7,32 @@
 
 | KPI | Value | Status |
 |-----|-------|--------|
-| ROAS | 2.50x | 🟢 |
-| Revenue | $9,095.86 | - |
-| Spend | $3,644.83 | - |
-| Profit | $5,451.03 | 🟢 |
-| CPP | $15.12 | 🟢 |
-| CTR | 2.42% | 🟢 |
-| Frequency | 2.41 | 🟢 |
-| Purchases | 241 | - |
+| ROAS | 1.51x | 🔴 |
+| Revenue | $10,096.86 | - |
+| Spend | $6,702.03 | - |
+| Profit | $3,394.83 | 🟢 |
+| CPP | $25.68 | 🔴 |
+| CTR | 2.09% | 🟢 |
+| Frequency | 2.83 | 🔴 |
+| Purchases | 261 | - |
 
 ---
 
 ## Threshold Alerts
 
-- 🟢 **ROAS**: ROAS: 2.50 triggered GOOD threshold (>= 2.0)
+- 🟡 **ROAS**: ROAS: 1.51 triggered WARNING threshold (< 1.8)
+  - Action: `OPTIMIZE_TARGETING`
+  - Urgency: within_24h
+
+- 🟡 **CPP**: CPP: 25.68 triggered WARNING threshold (> 25)
+  - Action: `REVIEW_CREATIVES`
+  - Urgency: within_24h
+
+- 🟢 **CTR**: CTR: 2.09 triggered GOOD threshold (>= 2.0)
   - Action: `MAINTAIN`
   - Urgency: none
 
-- 🟢 **CPP**: CPP: 15.12 triggered GOOD threshold (<= 20)
-  - Action: `MAINTAIN`
-  - Urgency: none
-
-- 🟢 **CTR**: CTR: 2.42 triggered GOOD threshold (>= 2.0)
-  - Action: `MAINTAIN`
-  - Urgency: none
-
-- 🟢 **FREQUENCY**: FREQUENCY: 2.41 triggered GOOD threshold (<= 2.5)
-  - Action: `MAINTAIN`
-  - Urgency: none
-
-- 🟢 **CHECKOUT_RATE**: CHECKOUT_RATE: 7.59 triggered GOOD threshold (>= 7)
-  - Action: `MAINTAIN`
-  - Urgency: none
-
-- 🟢 **CLOSE_RATE**: CLOSE_RATE: 67.32 triggered GOOD threshold (>= 60)
+- 🟢 **CLOSE_RATE**: CLOSE_RATE: 65.41 triggered GOOD threshold (>= 60)
   - Action: `MAINTAIN`
   - Urgency: none
 
@@ -49,10 +41,10 @@
 
 ## Financial Summary
 
-- **Gross Profit**: $5,451.03
-- **Margin**: 59.9%
-- **Commission (20%)**: $1,090.21
+- **Gross Profit**: $3,394.83
+- **Margin**: 33.6%
+- **Commission (20%)**: $678.97
 
 ---
 
-*Generated: 2026-01-03 01:57:48*
+*Generated: 2026-01-03 15:43:44*
