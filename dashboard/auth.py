@@ -16,6 +16,11 @@ def check_password() -> bool:
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
+        # Check if password key exists in session state
+        if "password" not in st.session_state or not st.session_state["password"]:
+            st.session_state["password_correct"] = False
+            return
+
         if hmac.compare_digest(
             hashlib.sha256(st.session_state["password"].encode()).hexdigest(),
             hashlib.sha256(get_password().encode()).hexdigest()
