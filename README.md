@@ -93,6 +93,8 @@ streamlit run app.py
 |------------|------|--------|
 | **Meta Ads** | Anuncios | Ativo |
 | **Leonardo.ai** | Geracao de Imagens | Ativo |
+| **ElevenLabs** | Voice Cloning | Ativo |
+| **HeyGen** | Avatar Lip Sync | Ativo |
 | **Hyros** | Atribuicao | Ativo |
 | **Whop** | Checkout | Ativo |
 | **ClickFunnels** | Checkout | Ativo |
@@ -111,7 +113,7 @@ streamlit run app.py
 | **Ad Launcher** | Gestao de anuncios | Ativo |
 | **Copy Forge** | Geracao de copies | Ativo |
 | **Design Agent** | Imagens com Leonardo.ai | Ativo |
-| **Video Editor** | Videos com Creatomate | Ativo |
+| **Video Editor** | Videos com ElevenLabs + HeyGen | Ativo |
 | **Creative Lab** | Criativos | Em dev |
 | **Audience Builder** | Publicos | Em dev |
 | **Performance Optimizer** | Otimizacao | Em dev |
@@ -130,7 +132,13 @@ META_AD_ACCOUNT_ID=act_xxxxx
 # AI Image Generation (Leonardo.ai)
 LEONARDO_API_KEY=sua_chave
 
-# AI Video Generation (Creatomate)
+# AI Voice Cloning (ElevenLabs)
+ELEVENLABS_API_KEY=sua_chave
+
+# AI Avatar Lip Sync (HeyGen)
+HEYGEN_API_KEY=sua_chave
+
+# AI Video Templates (Creatomate - fallback)
 CREATOMATE_API_KEY=sua_chave
 
 # Checkout
