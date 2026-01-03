@@ -103,16 +103,63 @@ cp -r _templates/agent-template agents/nome-agente
 
 ---
 
-## Próximos Passos
+## Sistema de Automacao (ATIVO)
 
-- [ ] Gerar token Meta Ads (Brez Scales)
-- [ ] Testar MCP meta-ads
-- [ ] Definir métricas do funil
-- [ ] Criar planilha de tracking
-- [ ] Primeiro Daily Pulse
+O sistema roda automaticamente via GitHub Actions:
+
+| Schedule | Horario | Acao |
+|----------|---------|------|
+| Daily Report | 9 AM BRT | Relatorio completo |
+| Hourly Check | 9AM-6PM | Verificacao de thresholds |
+| Weekly Summary | Segunda 10 AM | Resumo semanal |
+
+### Comandos Rapidos
+
+```bash
+# Ver dashboard
+cd clients/brez-scales/dashboards/streamlit && streamlit run app.py
+
+# Rodar automacao manual
+cd agents/command-center && python automation_engine.py --mode report
+
+# Ver status do workflow
+gh run list
+```
+
+### Links
+
+- [GitHub Actions](https://github.com/rodrigokruegersm/marketing-automation-agents/actions)
+- [Documentacao Completa](docs/guides/MEDIA_BUYER_AUTOMATION.md)
+- [Historico de Sessoes](docs/session-history/)
+
+---
+
+## Resultados Atuais (Brez Scales)
+
+| KPI | Valor | Status |
+|-----|-------|--------|
+| ROAS | 2.50x | GOOD |
+| Revenue | $9,095.86 | - |
+| Spend | $3,644.83 | - |
+| Profit | $5,451.03 | GOOD |
+| Comissao (20%) | $1,090.21 | - |
+
+---
+
+## Proximos Passos
+
+- [x] Gerar token Meta Ads (Brez Scales)
+- [x] Testar MCP meta-ads
+- [x] Definir metricas do funil
+- [x] Criar planilha de tracking
+- [x] Primeiro Daily Pulse
+- [x] Configurar GitHub Actions
+- [ ] Adicionar mais clientes
+- [ ] Integrar Slack para alertas
+- [ ] Expandir para Google Ads
 
 ---
 
 **Contato:** Rodrigo (CMO) | Pierre (CEO)
 
-**Criado:** 2026-01-02
+**Criado:** 2026-01-02 | **Atualizado:** 2026-01-03
