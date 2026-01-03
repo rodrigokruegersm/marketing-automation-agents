@@ -1,0 +1,85 @@
+# =============================================================================
+# ADLYTICS - Configuracoes Gerais
+# =============================================================================
+# Este arquivo contem as configuracoes principais do sistema.
+# Edite conforme necessario para seu ambiente.
+# =============================================================================
+
+# Informacoes do App
+app:
+  name: "Adlytics"
+  tagline: "Everything Ads"
+  version: "3.2.0"
+  environment: "production"  # development, staging, production
+
+# Configuracoes do Dashboard
+dashboard:
+  theme: "dark"
+  language: "pt-BR"
+  timezone: "America/Sao_Paulo"
+  cache_ttl: 120  # segundos
+
+# APIs - Timeout e Retry
+api:
+  timeout: 30  # segundos
+  max_retries: 3
+  retry_delay: 1  # segundos
+
+# Meta Ads API
+meta_ads:
+  api_version: "v18.0"
+  base_url: "https://graph.facebook.com"
+  date_format: "%Y-%m-%d"
+  default_date_preset: "last_7d"
+  fields:
+    - spend
+    - impressions
+    - reach
+    - clicks
+    - cpm
+    - cpc
+    - ctr
+    - frequency
+    - actions
+    - action_values
+    - cost_per_action_type
+    - purchase_roas
+
+# Limites de Requisicao (Rate Limiting)
+rate_limits:
+  meta_ads:
+    requests_per_hour: 200
+    requests_per_minute: 60
+  leonardo:
+    requests_per_minute: 10
+  elevenlabs:
+    requests_per_minute: 5
+
+# Logs
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/adlytics.log"
+
+# Alertas
+alerts:
+  enabled: true
+  channels:
+    - email
+    - dashboard
+  thresholds:
+    roas_critical: 0.8
+    spend_daily_max: 1000
+    frequency_max: 4.0
+
+# Automacoes
+automation:
+  enabled: false  # Ative quando pronto
+  check_interval: 3600  # segundos (1 hora)
+  allowed_actions:
+    - pause_campaign
+    - reduce_budget
+    - send_alert
+  blocked_actions:
+    - delete_campaign
+    - increase_budget_50plus

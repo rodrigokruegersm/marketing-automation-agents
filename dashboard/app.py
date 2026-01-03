@@ -1461,4 +1461,4 @@ elif st.session_state.current_page == 'settings':
 
 # Footer
 st.markdown("---")
-st.markdown(f"<p style='text-align: center; color: #64748B !important; font-size: 12px;'>Adlytics v3.1 · {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: #64748B !important; font-size: 12px;'>Adlytics v3.2.0 · {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>", unsafe_allow_html=True)

@@ -1,0 +1,146 @@
+# =============================================================================
+# ADLYTICS - Thresholds de Performance
+# =============================================================================
+# Baseado no metodo Jeremy Haines de Media Buying.
+# Estes valores determinam quando uma campanha deve ser:
+# - KILL (pausar) - Performance ruim
+# - WATCH (monitorar) - Performance mediana
+# - SCALE (escalar) - Performance boa
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# ROAS (Return on Ad Spend)
+# Formula: Receita / Gasto
+# -----------------------------------------------------------------------------
+roas:
+  kill: 1.0      # ROAS < 1.0x = Pausar (perdendo dinheiro)
+  watch: 1.5     # ROAS 1.0-1.5x = Monitorar
+  scale: 2.0     # ROAS >= 2.0x = Escalar
+  notes: |
+    ROAS < 1.0 significa que voce gasta mais do que ganha.
+    ROAS 2.0+ e considerado saudavel para e-commerce.
+
+# -----------------------------------------------------------------------------
+# CTR (Click-Through Rate)
+# Formula: (Cliques / Impressoes) * 100
+# -----------------------------------------------------------------------------
+ctr:
+  kill: 0.8      # CTR < 0.8% = Criativos fracos
+  watch: 1.5     # CTR 0.8-1.5% = Aceitavel
+  scale: 2.0     # CTR >= 2.0% = Criativos fortes
+  notes: |
+    CTR baixo indica que o criativo nao chama atencao.
+    Considere testar novos hooks nos primeiros 3 segundos.
+
+# -----------------------------------------------------------------------------
+# Frequencia
+# Formula: Impressoes / Alcance
+# -----------------------------------------------------------------------------
+frequency:
+  warning: 2.5   # Comeca a saturar
+  critical: 3.5  # Audiencia saturada
+  max: 5.0       # Pausar imediatamente
+  notes: |
+    Frequencia alta = mesmas pessoas vendo o mesmo anuncio.
+    Causa fadiga de audiencia e aumento de custos.
+
+# -----------------------------------------------------------------------------
+# CPA (Cost Per Acquisition)
+# Formula: Gasto / Conversoes
+# -----------------------------------------------------------------------------
+cpa:
+  target_multiplier: 1.5  # CPA > 1.5x do target = problema
+  max_multiplier: 2.0     # CPA > 2x do target = pausar
+  notes: |
+    Defina seu CPA target baseado no LTV do cliente.
+    Se LTV = $100, CPA target pode ser $30-40.
+
+# -----------------------------------------------------------------------------
+# CPM (Cost Per Mille - 1000 impressoes)
+# -----------------------------------------------------------------------------
+cpm:
+  low: 5.0       # CPM muito baixo pode indicar trafico ruim
+  normal: 15.0   # CPM normal para Brasil
+  high: 40.0     # CPM alto, verificar segmentacao
+  notes: |
+    CPM varia muito por nicho e pais.
+    E-commerce Brasil: $8-20 e normal.
+
+# -----------------------------------------------------------------------------
+# Hook Rate (3 segundos de video)
+# Formula: (Video views 25% / Impressoes) * 100
+# -----------------------------------------------------------------------------
+hook_rate:
+  poor: 15.0     # Hook fraco
+  good: 25.0     # Hook aceitavel
+  great: 35.0    # Hook excelente
+  notes: |
+    Hook rate mede se os primeiros segundos prendem atencao.
+    Melhore o inicio do video para aumentar.
+
+# -----------------------------------------------------------------------------
+# LP View Rate (Taxa de visualizacao da Landing Page)
+# Formula: (LP Views / Link Clicks) * 100
+# -----------------------------------------------------------------------------
+lp_view_rate:
+  poor: 50.0     # Muitos cliques acidentais ou pagina lenta
+  normal: 70.0   # Normal
+  good: 85.0     # Bom
+  notes: |
+    Taxa baixa indica: pagina lenta, cliques acidentais,
+    ou descasamento entre anuncio e pagina.
+
+# -----------------------------------------------------------------------------
+# Checkout Rate (IC para Purchase)
+# Formula: (Purchases / Initiated Checkouts) * 100
+# -----------------------------------------------------------------------------
+checkout_rate:
+  poor: 20.0     # Problema no checkout
+  normal: 35.0   # Aceitavel
+  good: 50.0     # Bom
+  notes: |
+    Taxa baixa indica: checkout complicado, frete caro,
+    falta de confianca, ou metodos de pagamento limitados.
+
+# -----------------------------------------------------------------------------
+# Regras de Decisao (3 dias vs 7 dias)
+# -----------------------------------------------------------------------------
+trend_analysis:
+  minimum_spend_3d: 50     # Minimo $50 gastos em 3 dias
+  minimum_spend_7d: 150    # Minimo $150 gastos em 7 dias
+  trend_threshold: 0.3     # Variacao de 0.3x e significativa
+  notes: |
+    Nunca tome decisoes baseado em dados do dia atual.
+    Compare sempre 3 dias vs 7 dias para ver tendencias.
+
+# -----------------------------------------------------------------------------
+# Acoes Recomendadas
+# -----------------------------------------------------------------------------
+actions:
+  roas_below_kill:
+    - "Pausar campanha"
+    - "Revisar segmentacao"
+    - "Testar novos criativos"
+
+  roas_in_watch:
+    - "Manter budget atual"
+    - "Testar novos criativos"
+    - "Otimizar publicos"
+    - "Aguardar 3-4 dias"
+
+  roas_above_scale:
+    - "Aumentar budget 20-30%"
+    - "Duplicar adsets vencedores"
+    - "Expandir lookalikes"
+
+  frequency_high:
+    - "Expandir audiencia 50%+"
+    - "Adicionar novos interesses"
+    - "Criar lookalikes"
+    - "Pausar adsets saturados"
+
+  ctr_low:
+    - "Testar novos hooks"
+    - "Atualizar copies"
+    - "Testar novos formatos"
+    - "Verificar segmentacao"
