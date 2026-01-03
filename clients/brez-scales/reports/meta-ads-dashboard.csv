@@ -1,0 +1,120 @@
+BREZ SCALES - META ADS DASHBOARD
+Data Extraction: 2026-01-02
+Account ID: act_1202800550735727
+
+===========================================
+SUMMARY BY TIME PERIOD
+===========================================
+
+Metric,1 Day (Yesterday),3 Days,7 Days,Trend
+Date Range,2026-01-01,Dec 30 - Jan 1,Dec 26 - Jan 1,-
+Spend,$1850.80,$3644.71,$3644.71,Stable
+Revenue,$4217.86,$9095.86,$9095.86,Stable
+ROAS,2.28x,2.49x,2.49x,+9.2%
+Purchases,116,241,241,-
+Cost per Purchase,$15.96,$15.12,$15.12,-5.3%
+Impressions,229229,422763,422763,-
+Reach,139818,175472,175472,-
+Frequency,1.64,2.41,2.41,+47%
+Clicks,5143,10231,10231,-
+CTR,2.24%,2.42%,2.42%,+8%
+CPC,$0.36,$0.36,$0.36,Stable
+Landing Page Views,2308,4714,4714,-
+Initiate Checkout,182,358,358,-
+Add Payment Info,67,131,131,-
+
+===========================================
+FUNNEL ANALYSIS - PAID CHALLENGE
+===========================================
+
+Stage,1 Day,3 Days,7 Days,Conv Rate (3d)
+Impressions,229229,422763,422763,100%
+Clicks,5143,10231,10231,2.42%
+Landing Page Views,2308,4714,4714,46.1%
+Initiate Checkout,182,358,358,7.59%
+Add Payment Info,67,131,131,36.6%
+Purchases,116,241,241,184%*
+
+*Nota: Add Payment Info > Purchases indica tracking parcial ou compras sem adicionar pagamento antes
+
+===========================================
+KEY METRICS FOR PAID CHALLENGE FUNNEL
+===========================================
+
+Metric,Value (3 Days),Benchmark,Status
+ROAS,2.49x,>2.0x,GOOD
+Cost per Purchase,$15.12,<$25,EXCELLENT
+CTR,2.42%,>1.5%,GOOD
+CPC,$0.36,<$0.50,EXCELLENT
+LP View Rate,46.1%,>40%,GOOD
+Checkout Rate,7.59%,>5%,GOOD
+Purchase Conv Rate,67.3%,>50%,EXCELLENT
+
+===========================================
+FUNNEL DROP-OFF ANALYSIS
+===========================================
+
+Stage Transition,Drop Rate,Action Needed
+Impression to Click,97.6%,Normal for cold traffic
+Click to LP View,53.9%,Check page load speed
+LP View to Checkout,92.4%,Optimize LP copy/CTA
+Checkout to Payment,63.4%,Normal
+Payment to Purchase,-84%*,Tracking issue*
+
+===========================================
+DAILY METRICS (Yesterday)
+===========================================
+
+Daily Spend,$1850.80
+Daily Revenue,$4217.86
+Daily Profit,$2367.06
+Daily ROAS,2.28x
+Daily Purchases,116
+Avg Order Value,$36.36
+
+===========================================
+PROJECTION (Based on 3-day avg)
+===========================================
+
+Metric,Daily Avg,Weekly Proj,Monthly Proj
+Spend,$1214.90,$8504.32,$36448.53
+Revenue,$3031.95,$21223.68,$90958.65
+Profit,$1817.05,$12719.36,$54510.12
+Purchases,80.3,562.3,2410.0
+ROAS,2.49x,2.49x,2.49x
+
+===========================================
+AGENCY COMMISSION CALCULATION
+===========================================
+
+Period,Revenue,Ad Spend,Net Revenue,Commission (20%)
+3 Days,$9095.86,$3644.71,$5451.15,$1090.23
+Weekly Proj,$21223.68,$8504.32,$12719.36,$2543.87
+Monthly Proj,$90958.65,$36448.53,$54510.12,$10902.02
+
+===========================================
+RECOMMENDATIONS (Senior Media Buyer Analysis)
+===========================================
+
+1. SCALE OPPORTUNITY: ROAS 2.49x is healthy. Can increase daily budget 20-30% safely.
+
+2. FREQUENCY ALERT: 2.41 frequency in 3 days is high. Monitor for ad fatigue.
+
+3. CREATIVE REFRESH: Prepare new creatives before frequency hits 3.0.
+
+4. LP OPTIMIZATION: 46% LP view rate is good but 53.9% drop from click. Check:
+   - Mobile page speed
+   - Above the fold content
+   - Trust signals
+
+5. CHECKOUT FLOW: 7.59% checkout rate is strong. Maintain current LP structure.
+
+6. TRACKING CHECK: Purchase count higher than Add Payment suggests:
+   - Some purchases bypass payment step
+   - Or pixel firing issues
+   - Recommend: Verify Whop integration with Meta pixel
+
+7. BUDGET RECOMMENDATION: Current ~$1,200/day performing well.
+   - Conservative: Maintain current
+   - Moderate: Scale to $1,500/day
+   - Aggressive: Scale to $2,000/day (if creative bank ready)

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Looker Studio - Link Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #5f6368;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+        .step {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1a73e8;
+        }
+        .step h3 {
+            color: #202124;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .step-number {
+            background: #1a73e8;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .step p {
+            color: #5f6368;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .step a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .step a:hover {
+            text-decoration: underline;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 12px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        .btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 24px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #1557b0;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #e8f5e9;
+            border: 2px solid #34a853;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 24px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result h4 {
+            color: #34a853;
+            margin-bottom: 12px;
+        }
+        .result-link {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .copy-btn {
+            background: #34a853;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .copy-btn:hover {
+            background: #2e7d32;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Looker Studio Link Generator</h1>
+        <p class="subtitle">Brez Scales - Paid Challenge Funnel Dashboard</p>
+
+        <div class="step">
+            <h3><span class="step-number">1</span> Criar Google Sheet</h3>
+            <p>
+                Primeiro, importe os dados para o Google Sheets:<br><br>
+                1. Abra <a href="https://sheets.google.com" target="_blank">Google Sheets</a><br>
+                2. Crie uma nova planilha chamada <strong>"Brez Scales - Meta Ads Data"</strong><br>
+                3. Importe o arquivo <code>google-sheets-template.csv</code><br>
+                4. Copie o ID da planilha da URL
+            </p>
+            <input type="text" id="sheetId" placeholder="Cole o ID do Google Sheet aqui (ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms)">
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span> Nome da Aba</h3>
+            <p>
+                O nome da aba (sheet tab) onde estão os dados. Por padrão é "Sheet1" ou o nome do arquivo importado.
+            </p>
+            <input type="text" id="sheetName" placeholder="Nome da aba (ex: Sheet1)" value="google-sheets-template">
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span> Gerar Link</h3>
+            <p>
+                Clique no botão abaixo para gerar o link do Looker Studio com o template pré-configurado.
+            </p>
+        </div>
+
+        <button class="btn" onclick="generateLink()">🚀 Gerar Link do Dashboard</button>
+
+        <div class="result" id="result">
+            <h4>✅ Link Gerado com Sucesso!</h4>
+            <div class="result-link" id="generatedLink"></div>
+            <button class="copy-btn" onclick="copyLink()">📋 Copiar Link</button>
+            <br><br>
+            <a id="openLink" href="#" target="_blank" style="color: #1a73e8; font-weight: 600;">Abrir Dashboard no Looker Studio →</a>
+        </div>
+
+        <div class="info-box">
+            <strong>ℹ️ Como funciona:</strong><br>
+            O Looker Studio Linking API cria um relatório pré-configurado conectado aos seus dados.
+            Ao clicar no link, você terá um dashboard pronto com todas as métricas do funil de challenge pago.
+        </div>
+    </div>
+
+    <script>
+        function generateLink() {
+            const sheetId = document.getElementById('sheetId').value.trim();
+            const sheetName = document.getElementById('sheetName').value.trim() || 'Sheet1';
+
+            if (!sheetId) {
+                alert('Por favor, cole o ID do Google Sheet');
+                return;
+            }
+
+            // Looker Studio Linking API URL structure
+            // Reference: https://developers.google.com/looker-studio/integrate/linking-api
+
+            const baseUrl = 'https://lookerstudio.google.com/reporting/create';
+
+            // Data source configuration for Google Sheets
+            const config = {
+                // Report name
+                'c.reportName': 'Brez Scales - Paid Challenge Funnel',
+
+                // Data source: Google Sheets
+                'ds.ds0.connector': 'googleSheets',
+                'ds.ds0.spreadsheetId': sheetId,
+                'ds.ds0.worksheetId': '0', // First sheet
+                'ds.ds0.includeHiddenCells': 'false',
+                'ds.ds0.includeFirstRow': 'true',
+
+                // Template settings
+                'c.mode': 'edit',
+                'c.explain': 'true'
+            };
+
+            // Build URL with parameters
+            const params = new URLSearchParams(config);
+            const fullUrl = `${baseUrl}?${params.toString()}`;
+
+            // Show result
+            document.getElementById('generatedLink').textContent = fullUrl;
+            document.getElementById('openLink').href = fullUrl;
+            document.getElementById('result').classList.add('show');
+        }
+
+        function copyLink() {
+            const link = document.getElementById('generatedLink').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Link copiado!');
+            });
+        }
+    </script>
+</body>
+</html>

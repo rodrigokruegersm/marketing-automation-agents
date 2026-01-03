@@ -25,28 +25,33 @@
 
     "meta-ads": {
       "command": "node",
-      "args": ["/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/src/mcps/custom/meta-ads/index.js"],
+      "args": ["/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/mcps/meta-ads/index.js"],
       "env": {
-        "META_ACCESS_TOKEN": "PREENCHER_COM_SEU_TOKEN",
+        "META_ACCESS_TOKEN": "EAARxSEanVtUBQfauZBuy1WI8Luaq4A9pj4pD7N6dUvaL9aPCorg8W2G5dDpdyze2OtLVc8RnGxNazo1ri1mHNwNY54Dk1AE6HTLBFxQnIwl6j9qU3eFzhzxHT9k08Qx2E5lopXDmcfNPcZCdWobZC4j0wuHjNsd2ONMTLQu2XU0q9iaZClBjtAl16CGYYgZDZD",
         "META_AD_ACCOUNT_ID": "act_1202800550735727"
       }
     },
 
     "gohighlevel": {
       "command": "node",
-      "args": ["/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/src/mcps/custom/gohighlevel/index.js"],
+      "args": ["/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/mcps/gohighlevel/index.js"],
       "env": {
-        "GHL_API_KEY": "PREENCHER_COM_SUA_API_KEY",
-        "GHL_LOCATION_ID": "PREENCHER_COM_LOCATION_ID"
+        "GHL_API_KEY": "PREENCHER",
+        "GHL_LOCATION_ID": "PREENCHER"
       }
     },
 
     "zapier": {
       "command": "node",
-      "args": ["/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/src/mcps/custom/zapier/index.js"],
+      "args": ["/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/mcps/zapier/index.js"],
       "env": {
-        "ZAPIER_API_KEY": "PREENCHER_COM_SUA_API_KEY"
+        "ZAPIER_API_KEY": "PREENCHER"
       }
+    },
+
+    "google-sheets": {
+      "command": "node",
+      "args": ["/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/mcps/google-sheets/index.js"]
     }
   }
 }

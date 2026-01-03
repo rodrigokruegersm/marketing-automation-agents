@@ -281,3 +281,42 @@ audiences:
 - Recebe comandos orquestrados
 - Reporta status de execução
 - Escala para humano quando necessário
+
+---
+
+## Configuração Atual - Brez Scales
+
+### Meta Ads
+```yaml
+account_id: act_1202800550735727
+token_type: System User Token
+app_name: Brez Automation MCP
+api_version: v18.0
+```
+
+### Campanhas Ativas (2026-01-02)
+```
+[BSB] [TICKET SALES] [SALES] [ADS FIRST BATCH]
+├── Status: ACTIVE
+├── Budget: $2,500/dia
+└── ROAS: 2.49x
+
+[BSB] [TICKET SALES] [SALES] [AD ROAS BREZ]
+├── Status: ACTIVE
+├── Budget: $1,500/dia
+└── Performance: Monitorando
+
+[BSB] [TICKET SALES] [SALES] [ADS SECOND BATCH]
+├── Status: ACTIVE
+├── Budget: $1,000/dia
+└── Performance: Monitorando
+```
+
+### Métricas Atuais
+```
+ROAS: 2.49x
+CPP: $15.12
+CTR: 2.42%
+Daily Spend: ~$1,850
+Daily Revenue: ~$4,200
+```

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brezscales.automation</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/agents/command-center/scheduler.py</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/agents/command-center/logs/stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/rodrigokrueger/Documents/Dev Projects/Active/Marketing Automation Agents/agents/command-center/logs/stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>META_ACCESS_TOKEN</key>
+        <string>EAARxSEanVtUBQfauZBuy1WI8Luaq4A9pj4pD7N6dUvaL9aPCorg8W2G5dDpdyze2OtLVc8RnGxNazo1ri1mHNwNY54Dk1AE6HTLBFxQnIwl6j9qU3eFzhzxHT9k08Qx2E5lopXDmcfNPcZCdWobZC4j0wuHjNsd2ONMTLQu2XU0q9iaZClBjtAl16CGYYgZDZD</string>
+        <key>META_AD_ACCOUNT_ID</key>
+        <string>act_1202800550735727</string>
+    </dict>
+</dict>
+</plist>

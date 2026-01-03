@@ -1,0 +1,123 @@
+# =============================================================================
+# BREZ SCALES - Daily Automation Workflow
+# =============================================================================
+# Runs at 9 AM São Paulo time (12 PM UTC) every day
+# Also runs hourly threshold checks
+# =============================================================================
+
+name: Daily Automation
+
+on:
+  schedule:
+    # 9 AM São Paulo = 12 PM UTC (Brazil is UTC-3)
+    - cron: '0 12 * * *'  # Daily report at 9 AM BRT
+
+    # Hourly checks during business hours (9 AM - 6 PM BRT = 12 PM - 9 PM UTC)
+    - cron: '0 12-21 * * *'  # Every hour from 9 AM to 6 PM BRT
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Run mode'
+        required: true
+        default: 'check'
+        type: choice
+        options:
+          - check
+          - report
+
+env:
+  META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+  META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+  daily-automation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml requests schedule python-dotenv
+
+      - name: Determine run mode
+        id: mode
+        run: |
+          # Check if this is the 9 AM run (12 UTC)
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "12" ] && [ "${{ github.event.schedule }}" = "0 12 * * *" ]; then
+            echo "mode=report" >> $GITHUB_OUTPUT
+            echo "Running daily report..."
+          else
+            echo "mode=check" >> $GITHUB_OUTPUT
+            echo "Running hourly check..."
+          fi
+
+      - name: Run Automation Engine
+        run: |
+          cd agents/command-center
+          python automation_engine.py --mode=${{ steps.mode.outputs.mode }} --period=last_3d
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-reports-${{ github.run_number }}
+          path: clients/brez-scales/reports/
+          retention-days: 30
+
+      - name: Commit updated data
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add clients/brez-scales/data/ || true
+          git add clients/brez-scales/reports/ || true
+          git diff --staged --quiet || git commit -m "🤖 Auto-update: Daily metrics $(date +%Y-%m-%d)"
+          git push || true
+
+      - name: Send Slack notification (on failure)
+        if: failure()
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"🔴 Brez Scales Automation FAILED - Check GitHub Actions"}' \
+              $SLACK_WEBHOOK_URL
+          fi
+
+  # Weekly summary job - runs on Mondays
+  weekly-summary:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 12 * * 1'  # Monday at 9 AM BRT
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml requests schedule python-dotenv
+
+      - name: Run Weekly Report
+        run: |
+          cd agents/command-center
+          python automation_engine.py --mode=report --period=last_7d
+
+      - name: Upload weekly report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-report-${{ github.run_number }}
+          path: clients/brez-scales/reports/
+          retention-days: 90

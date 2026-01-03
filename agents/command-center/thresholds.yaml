@@ -1,0 +1,504 @@
+# =============================================================================
+# INTELLIGENT THRESHOLDS & ACTION TRIGGERS
+# Brez Scales - Paid Challenge Funnel
+# =============================================================================
+#
+# Estrutura:
+#   - Cada KPI tem thresholds (critical, warning, good, excellent)
+#   - Cada threshold dispara uma ACTION
+#   - Cada action pode chamar um AGENT específico
+#
+# =============================================================================
+
+client: brez-scales
+funnel_type: paid_challenge
+currency: USD
+commission_rate: 0.20
+
+# =============================================================================
+# KPI THRESHOLDS & TRIGGERS
+# =============================================================================
+
+kpis:
+
+  # ---------------------------------------------------------------------------
+  # ROAS - Return on Ad Spend (Primary KPI)
+  # ---------------------------------------------------------------------------
+  roas:
+    description: "Return on Ad Spend"
+    unit: "x"
+
+    thresholds:
+      critical:
+        value: 1.5
+        operator: "<"
+        action: "PAUSE_AND_REVIEW"
+        urgency: "immediate"
+
+      warning:
+        value: 1.8
+        operator: "<"
+        action: "OPTIMIZE_TARGETING"
+        urgency: "within_24h"
+
+      good:
+        value: 2.0
+        operator: ">="
+        action: "MAINTAIN"
+        urgency: "none"
+
+      excellent:
+        value: 2.5
+        operator: ">="
+        action: "SCALE_BUDGET"
+        urgency: "opportunity"
+
+    actions:
+      PAUSE_AND_REVIEW:
+        agent: "ad-launcher"
+        command: "pause_underperforming"
+        params:
+          pause_threshold_roas: 1.5
+          notify: true
+        next_agent: "data-pulse"
+        next_command: "analyze_failure"
+
+      OPTIMIZE_TARGETING:
+        agent: "data-pulse"
+        command: "analyze_audiences"
+        params:
+          breakdown: "age,gender,placement"
+        next_agent: "ad-launcher"
+        next_command: "refine_targeting"
+
+      MAINTAIN:
+        agent: null
+        command: "log_status"
+        params:
+          status: "healthy"
+
+      SCALE_BUDGET:
+        agent: "ad-launcher"
+        command: "scale_budget"
+        params:
+          increase_percent: 20
+          max_daily_increase: 500
+        notify: true
+
+  # ---------------------------------------------------------------------------
+  # CPP - Cost Per Purchase
+  # ---------------------------------------------------------------------------
+  cpp:
+    description: "Cost Per Purchase"
+    unit: "$"
+
+    thresholds:
+      critical:
+        value: 30
+        operator: ">"
+        action: "URGENT_OPTIMIZATION"
+        urgency: "immediate"
+
+      warning:
+        value: 25
+        operator: ">"
+        action: "REVIEW_CREATIVES"
+        urgency: "within_24h"
+
+      good:
+        value: 20
+        operator: "<="
+        action: "MAINTAIN"
+        urgency: "none"
+
+      excellent:
+        value: 15
+        operator: "<="
+        action: "AGGRESSIVE_SCALE"
+        urgency: "opportunity"
+
+    actions:
+      URGENT_OPTIMIZATION:
+        agent: "data-pulse"
+        command: "identify_cpp_issues"
+        params:
+          analyze: ["audience", "placement", "creative"]
+        next_agent: "ad-launcher"
+        next_command: "pause_high_cpp_adsets"
+
+      REVIEW_CREATIVES:
+        agent: "copy-forge"
+        command: "generate_variations"
+        params:
+          type: "hooks"
+          count: 3
+        next_agent: "ad-launcher"
+        next_command: "create_test_campaign"
+
+      AGGRESSIVE_SCALE:
+        agent: "ad-launcher"
+        command: "duplicate_winners"
+        params:
+          min_purchases: 10
+          scale_factor: 1.5
+
+  # ---------------------------------------------------------------------------
+  # CTR - Click Through Rate
+  # ---------------------------------------------------------------------------
+  ctr:
+    description: "Click Through Rate"
+    unit: "%"
+
+    thresholds:
+      critical:
+        value: 1.0
+        operator: "<"
+        action: "CREATIVE_EMERGENCY"
+        urgency: "immediate"
+
+      warning:
+        value: 1.5
+        operator: "<"
+        action: "TEST_NEW_HOOKS"
+        urgency: "within_24h"
+
+      good:
+        value: 2.0
+        operator: ">="
+        action: "MAINTAIN"
+        urgency: "none"
+
+      excellent:
+        value: 3.0
+        operator: ">="
+        action: "EXPAND_AUDIENCE"
+        urgency: "opportunity"
+
+    actions:
+      CREATIVE_EMERGENCY:
+        agent: "copy-forge"
+        command: "emergency_hooks"
+        params:
+          style: "pattern_interrupt"
+          count: 5
+        notify: true
+        escalate_to_human: true
+
+      TEST_NEW_HOOKS:
+        agent: "copy-forge"
+        command: "generate_hooks"
+        params:
+          analyze_competitors: true
+          style: "curiosity"
+        next_agent: "ad-launcher"
+        next_command: "create_hook_test"
+
+      EXPAND_AUDIENCE:
+        agent: "ad-launcher"
+        command: "create_lookalike"
+        params:
+          source: "purchasers"
+          percentage: [1, 2, 3]
+
+  # ---------------------------------------------------------------------------
+  # FREQUENCY - Ad Fatigue Indicator
+  # ---------------------------------------------------------------------------
+  frequency:
+    description: "Average Ad Frequency"
+    unit: ""
+
+    thresholds:
+      critical:
+        value: 4.0
+        operator: ">"
+        action: "CREATIVE_REFRESH_URGENT"
+        urgency: "immediate"
+
+      warning:
+        value: 3.0
+        operator: ">"
+        action: "PREPARE_NEW_CREATIVES"
+        urgency: "within_24h"
+
+      good:
+        value: 2.5
+        operator: "<="
+        action: "MAINTAIN"
+        urgency: "none"
+
+      healthy:
+        value: 2.0
+        operator: "<="
+        action: "OPTIMAL"
+        urgency: "none"
+
+    actions:
+      CREATIVE_REFRESH_URGENT:
+        agent: "ad-launcher"
+        command: "rotate_creatives"
+        params:
+          pause_old: true
+          activate_new: true
+        notify: true
+
+      PREPARE_NEW_CREATIVES:
+        agent: "copy-forge"
+        command: "generate_batch"
+        params:
+          hooks: 3
+          bodies: 3
+          ctas: 2
+        alert: "Frequency approaching limit - new creatives needed"
+
+  # ---------------------------------------------------------------------------
+  # LP_VIEW_RATE - Landing Page View Rate
+  # ---------------------------------------------------------------------------
+  lp_view_rate:
+    description: "Landing Page View Rate (from clicks)"
+    unit: "%"
+
+    thresholds:
+      critical:
+        value: 30
+        operator: "<"
+        action: "PAGE_SPEED_AUDIT"
+        urgency: "immediate"
+
+      warning:
+        value: 40
+        operator: "<"
+        action: "OPTIMIZE_LANDING"
+        urgency: "within_24h"
+
+      good:
+        value: 50
+        operator: ">="
+        action: "MAINTAIN"
+        urgency: "none"
+
+    actions:
+      PAGE_SPEED_AUDIT:
+        agent: "data-pulse"
+        command: "audit_page_speed"
+        params:
+          url: "${landing_page_url}"
+        notify: true
+        escalate_to_human: true
+
+      OPTIMIZE_LANDING:
+        agent: "data-pulse"
+        command: "analyze_bounce"
+        params:
+          check: ["mobile_speed", "above_fold", "trust_signals"]
+
+  # ---------------------------------------------------------------------------
+  # CHECKOUT_RATE - Initiate Checkout Rate
+  # ---------------------------------------------------------------------------
+  checkout_rate:
+    description: "Checkout Rate (from LP views)"
+    unit: "%"
+
+    thresholds:
+      critical:
+        value: 3
+        operator: "<"
+        action: "LP_COPY_REVIEW"
+        urgency: "immediate"
+
+      warning:
+        value: 5
+        operator: "<"
+        action: "TEST_LP_ELEMENTS"
+        urgency: "within_24h"
+
+      good:
+        value: 7
+        operator: ">="
+        action: "MAINTAIN"
+        urgency: "none"
+
+      excellent:
+        value: 10
+        operator: ">="
+        action: "SCALE_TRAFFIC"
+        urgency: "opportunity"
+
+    actions:
+      LP_COPY_REVIEW:
+        agent: "copy-forge"
+        command: "analyze_lp_copy"
+        params:
+          elements: ["headline", "subhead", "bullets", "cta"]
+        escalate_to_human: true
+
+      TEST_LP_ELEMENTS:
+        agent: "copy-forge"
+        command: "generate_lp_variants"
+        params:
+          test_elements: ["headline", "cta_button"]
+
+      SCALE_TRAFFIC:
+        agent: "ad-launcher"
+        command: "increase_budget"
+        params:
+          percent: 30
+          cap: 1000
+
+  # ---------------------------------------------------------------------------
+  # CLOSE_RATE - Purchase Close Rate
+  # ---------------------------------------------------------------------------
+  close_rate:
+    description: "Close Rate (from checkout)"
+    unit: "%"
+
+    thresholds:
+      critical:
+        value: 40
+        operator: "<"
+        action: "CHECKOUT_AUDIT"
+        urgency: "immediate"
+
+      warning:
+        value: 50
+        operator: "<"
+        action: "PAYMENT_REVIEW"
+        urgency: "within_24h"
+
+      good:
+        value: 60
+        operator: ">="
+        action: "MAINTAIN"
+        urgency: "none"
+
+      excellent:
+        value: 75
+        operator: ">="
+        action: "INCREASE_TRAFFIC"
+        urgency: "opportunity"
+
+    actions:
+      CHECKOUT_AUDIT:
+        agent: "data-pulse"
+        command: "audit_checkout"
+        params:
+          check: ["payment_options", "trust_badges", "urgency"]
+        escalate_to_human: true
+
+      PAYMENT_REVIEW:
+        agent: "data-pulse"
+        command: "analyze_drop_off"
+        params:
+          step: "payment"
+
+# =============================================================================
+# COMPOSITE RULES (Multiple KPIs)
+# =============================================================================
+
+composite_rules:
+
+  - name: "Scale Opportunity"
+    description: "All metrics healthy - safe to scale"
+    conditions:
+      - kpi: roas
+        threshold: "excellent"
+      - kpi: cpp
+        threshold: "good"
+      - kpi: frequency
+        threshold: "good"
+    action:
+      agent: "ad-launcher"
+      command: "scale_campaign"
+      params:
+        method: "vertical"
+        increase: 30
+    notify: true
+
+  - name: "Creative Fatigue Alert"
+    description: "High frequency + declining CTR"
+    conditions:
+      - kpi: frequency
+        threshold: "warning"
+      - kpi: ctr
+        threshold: "warning"
+    action:
+      agent: "copy-forge"
+      command: "urgent_creative_batch"
+      params:
+        priority: "high"
+        deadline: "24h"
+    notify: true
+
+  - name: "Funnel Leak - Top"
+    description: "Good CTR but poor LP views"
+    conditions:
+      - kpi: ctr
+        threshold: "good"
+      - kpi: lp_view_rate
+        threshold: "critical"
+    action:
+      agent: "data-pulse"
+      command: "diagnose_funnel_leak"
+      params:
+        stage: "top"
+    escalate_to_human: true
+
+  - name: "Funnel Leak - Bottom"
+    description: "Good LP views but poor close rate"
+    conditions:
+      - kpi: checkout_rate
+        threshold: "good"
+      - kpi: close_rate
+        threshold: "critical"
+    action:
+      agent: "data-pulse"
+      command: "diagnose_funnel_leak"
+      params:
+        stage: "bottom"
+    escalate_to_human: true
+
+# =============================================================================
+# NOTIFICATION SETTINGS
+# =============================================================================
+
+notifications:
+  slack:
+    enabled: true
+    channel: "#brez-alerts"
+    mention_on_critical: "@rodrigo"
+
+  email:
+    enabled: false
+    recipients: []
+
+  dashboard:
+    enabled: true
+    refresh_interval: 300  # 5 minutes
+
+# =============================================================================
+# AUTOMATION SCHEDULE
+# =============================================================================
+
+schedule:
+  daily_report:
+    time: "09:00"
+    timezone: "America/Sao_Paulo"
+    actions:
+      - "fetch_meta_data"
+      - "update_spreadsheet"
+      - "check_thresholds"
+      - "generate_daily_pulse"
+
+  threshold_check:
+    interval: "1h"
+    actions:
+      - "fetch_meta_data"
+      - "evaluate_thresholds"
+      - "trigger_actions"
+
+  weekly_report:
+    day: "monday"
+    time: "10:00"
+    actions:
+      - "generate_weekly_summary"
+      - "calculate_commission"
+      - "send_client_report"
