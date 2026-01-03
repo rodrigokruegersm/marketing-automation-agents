@@ -32,11 +32,15 @@ def check_password() -> bool:
 
     def get_password() -> str:
         """Get password from secrets or environment"""
+        import os
+        # Try Streamlit secrets first
         try:
-            return st.secrets.get("DASHBOARD_PASSWORD", "adlytics2026")
-        except:
-            import os
-            return os.getenv("DASHBOARD_PASSWORD", "adlytics2026")
+            if "DASHBOARD_PASSWORD" in st.secrets:
+                return st.secrets["DASHBOARD_PASSWORD"]
+        except (FileNotFoundError, KeyError):
+            pass
+        # Fallback to environment variable
+        return os.getenv("DASHBOARD_PASSWORD", "adlytics2026")
 
     # First run or logout
     if "password_correct" not in st.session_state:
