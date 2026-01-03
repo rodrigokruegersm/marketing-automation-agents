@@ -8,6 +8,7 @@ from .copy_forge import CopyForgeAgent
 from .creative_lab import CreativeLabAgent
 from .audience_builder import AudienceBuilderAgent
 from .performance_optimizer import PerformanceOptimizerAgent
+from .design_agent import DesignAgent
 
 __all__ = [
     'BaseAgent',
@@ -17,4 +18,5 @@ __all__ = [
     'CreativeLabAgent',
     'AudienceBuilderAgent',
     'PerformanceOptimizerAgent',
+    'DesignAgent',
 ]

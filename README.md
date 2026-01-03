@@ -18,6 +18,7 @@ Adlytics/
 │   ├── adapters/           # Integracoes com APIs
 │   │   ├── meta_ads.py     # Meta Ads API
 │   │   ├── hyros.py        # Hyros Attribution
+│   │   ├── freepik.py      # Freepik AI Image API
 │   │   └── checkout/       # Plataformas de checkout
 │   │       ├── whop.py
 │   │       ├── clickfunnels.py
@@ -35,6 +36,7 @@ Adlytics/
 │   ├── ad-launcher/        # Gestao de anuncios
 │   ├── copy_forge/         # Geracao de copies
 │   ├── creative_lab/       # Criacao de criativos
+│   ├── design_agent/       # Geracao de imagens (Freepik AI)
 │   ├── audience_builder/   # Construcao de publicos
 │   └── performance_optimizer/  # Otimizacao de performance
 │
@@ -90,6 +92,7 @@ streamlit run app.py
 | Plataforma | Tipo | Status |
 |------------|------|--------|
 | **Meta Ads** | Anuncios | Ativo |
+| **Freepik AI** | Geracao de Imagens | Ativo |
 | **Hyros** | Atribuicao | Ativo |
 | **Whop** | Checkout | Ativo |
 | **ClickFunnels** | Checkout | Ativo |
@@ -107,6 +110,7 @@ streamlit run app.py
 | **Data Pulse** | Analise de dados | Ativo |
 | **Ad Launcher** | Gestao de anuncios | Ativo |
 | **Copy Forge** | Geracao de copies | Ativo |
+| **Design Agent** | Imagens com Freepik AI | Ativo |
 | **Creative Lab** | Criativos | Em dev |
 | **Audience Builder** | Publicos | Em dev |
 | **Performance Optimizer** | Otimizacao | Em dev |
@@ -121,6 +125,9 @@ streamlit run app.py
 # Meta Ads
 META_ACCESS_TOKEN=seu_token
 META_AD_ACCOUNT_ID=act_xxxxx
+
+# AI Image Generation
+FREEPIK_API_KEY=sua_chave
 
 # Checkout
 WHOP_API_KEY=sua_chave
