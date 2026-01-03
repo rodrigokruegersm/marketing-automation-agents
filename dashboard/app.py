@@ -48,9 +48,32 @@ st.markdown("""
     #MainMenu, footer, header { visibility: hidden !important; }
     .block-container { padding: 1rem 2rem !important; max-width: 100% !important; }
 
-    /* Sidebar */
-    [data-testid="stSidebar"] { background: #1E293B !important; border-right: 1px solid #334155 !important; }
+    /* Sidebar - ALWAYS VISIBLE (no toggle) */
+    [data-testid="stSidebar"] {
+        background: #1E293B !important;
+        border-right: 1px solid #334155 !important;
+        min-width: 280px !important;
+        width: 280px !important;
+        transform: none !important;
+        position: relative !important;
+        visibility: visible !important;
+    }
     [data-testid="stSidebar"] * { color: #F8FAFC !important; }
+
+    /* Hide sidebar collapse button */
+    [data-testid="stSidebar"] button[kind="header"] { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+    button[data-testid="baseButton-header"] { display: none !important; }
+
+    /* Ensure sidebar content is always visible */
+    [data-testid="stSidebarContent"] {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* Fix sidebar nav content */
+    [data-testid="stSidebarNav"] { display: block !important; }
+    section[data-testid="stSidebar"] > div { padding-top: 1rem !important; }
 
     /* Typography */
     h1, h2, h3, h4, h5, h6, p, span, div, label { color: #F8FAFC !important; font-family: 'Inter', sans-serif !important; }
