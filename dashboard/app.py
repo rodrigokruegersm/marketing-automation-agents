@@ -1574,13 +1574,18 @@ elif st.session_state.current_page == 'traffic':
         metrics_3d = parse_full_metrics(insights_3d)
         metrics_7d = parse_full_metrics(insights_7d)
 
-        # Fetch GA data
-        ga_start = (date.today() - timedelta(days=7)).strftime('%Y-%m-%d')
+        # Fetch GA data for both 3d and 7d
+        ga_start_7d = (date.today() - timedelta(days=7)).strftime('%Y-%m-%d')
+        ga_start_3d = (date.today() - timedelta(days=3)).strftime('%Y-%m-%d')
         ga_end = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
-        ga_data = fetch_ga_data(creds['ga_property_id'], creds['ga_credentials_json'], ga_start, ga_end)
+
+        ga_data_7d = fetch_ga_data(creds['ga_property_id'], creds['ga_credentials_json'], ga_start_7d, ga_end)
+        ga_data_3d = fetch_ga_data(creds['ga_property_id'], creds['ga_credentials_json'], ga_start_3d, ga_end)
+        ga_data = ga_data_7d  # Maintain backwards compatibility
 
         # Cross-reference data
-        cross_data = cross_reference_data(metrics_7d, ga_data)
+        cross_data = cross_reference_data(metrics_7d, ga_data_7d)
+        cross_data_3d = cross_reference_data(metrics_3d, ga_data_3d)
 
         # Generate improvement suggestions
         suggestions = generate_improvement_suggestions(metrics_3d, metrics_7d, cross_data)
@@ -1974,6 +1979,161 @@ elif st.session_state.current_page == 'traffic':
                 else:
                     st.info("Nenhuma métrica em queda significativa")
 
+            # Google Analytics 3d vs 7d comparison
+            st.markdown("---")
+            st.markdown("#### 📊 Google Analytics - 3d vs 7d")
+
+            ga_3d_overview = ga_data_3d.get('overview', {})
+            ga_7d_overview = ga_data_7d.get('overview', {})
+
+            # Normalize 7d to 3d equivalent for fair comparison
+            ga_deltas = {
+                'sessions': calculate_delta(
+                    ga_3d_overview.get('sessions', 0),
+                    ga_7d_overview.get('sessions', 0) / 7 * 3
+                ),
+                'users': calculate_delta(
+                    ga_3d_overview.get('users', 0),
+                    ga_7d_overview.get('users', 0) / 7 * 3
+                ),
+                'bounce_rate': calculate_delta(
+                    ga_3d_overview.get('bounce_rate', 0),
+                    ga_7d_overview.get('bounce_rate', 0)
+                ),
+                'avg_session_duration': calculate_delta(
+                    ga_3d_overview.get('avg_session_duration', 0),
+                    ga_7d_overview.get('avg_session_duration', 0)
+                ),
+                'conversions': calculate_delta(
+                    ga_3d_overview.get('conversions', 0),
+                    ga_7d_overview.get('conversions', 0) / 7 * 3
+                )
+            }
+
+            ga_col1, ga_col2, ga_col3, ga_col4, ga_col5 = st.columns(5)
+
+            with ga_col1:
+                d = ga_deltas['sessions']
+                color = get_delta_color(d['trend'], 'positive')
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Sessões</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{ga_3d_overview.get('sessions', 0):,}</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{ga_7d_overview.get('sessions', 0):,}</strong></div>
+                        </div>
+                        <div style="font-size: 20px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with ga_col2:
+                d = ga_deltas['users']
+                color = get_delta_color(d['trend'], 'positive')
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Usuários</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{ga_3d_overview.get('users', 0):,}</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{ga_7d_overview.get('users', 0):,}</strong></div>
+                        </div>
+                        <div style="font-size: 20px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with ga_col3:
+                d = ga_deltas['bounce_rate']
+                color = get_delta_color(d['trend'], 'negative')  # Less bounce is better
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Bounce Rate</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{ga_3d_overview.get('bounce_rate', 0):.1f}%</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{ga_7d_overview.get('bounce_rate', 0):.1f}%</strong></div>
+                        </div>
+                        <div style="font-size: 20px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with ga_col4:
+                d = ga_deltas['avg_session_duration']
+                color = get_delta_color(d['trend'], 'positive')  # More time is better
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Duração Média</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{ga_3d_overview.get('avg_session_duration', 0):.0f}s</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{ga_7d_overview.get('avg_session_duration', 0):.0f}s</strong></div>
+                        </div>
+                        <div style="font-size: 20px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with ga_col5:
+                d = ga_deltas['conversions']
+                color = get_delta_color(d['trend'], 'positive')
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Conversões (GA)</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{ga_3d_overview.get('conversions', 0)}</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{ga_7d_overview.get('conversions', 0)}</strong></div>
+                        </div>
+                        <div style="font-size: 20px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # True ROAS comparison
+            st.markdown("---")
+            st.markdown("#### 📈 True ROAS (GA) vs Meta ROAS")
+
+            true_roas_3d = cross_data_3d.get('true_roas', 0)
+            true_roas_7d = cross_data.get('true_roas', 0)
+            meta_roas_3d = metrics_3d.get('roas', 0)
+            meta_roas_7d = metrics_7d.get('roas', 0)
+
+            roas_col1, roas_col2 = st.columns(2)
+
+            with roas_col1:
+                st.markdown(f"""
+                <div class="kpi-card" style="border-left: 4px solid #0066FF;">
+                    <div class="kpi-label">Meta ROAS</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #F8FAFC;">
+                        3d: {meta_roas_3d:.2f}x | 7d: {meta_roas_7d:.2f}x
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with roas_col2:
+                true_roas_color = '#10B981' if true_roas_7d >= 1.5 else '#F59E0B' if true_roas_7d >= 1.0 else '#EF4444'
+                st.markdown(f"""
+                <div class="kpi-card" style="border-left: 4px solid #E37400;">
+                    <div class="kpi-label">True ROAS (GA)</div>
+                    <div style="font-size: 28px; font-weight: bold; color: {true_roas_color};">
+                        3d: {true_roas_3d:.2f}x | 7d: {true_roas_7d:.2f}x
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
         # ========== TAB 3: CROSS-PLATFORM ==========
         with tab3:
             st.markdown("### 🔗 Cruzamento Meta Ads + Google Analytics")
@@ -2052,23 +2212,88 @@ elif st.session_state.current_page == 'traffic':
             ga_col3.metric("Bounce Rate", f"{cross_data['ga_bounce_rate']:.1f}%")
             ga_col4.metric("Duração Média", f"{cross_data['ga_avg_session_duration']:.0f}s")
 
-            # Traffic sources
-            if cross_data.get('traffic_sources'):
-                st.markdown("#### 📡 Fontes de Tráfego")
-                sources_df = pd.DataFrame([
-                    {'Fonte': k, 'Sessões': v}
-                    for k, v in cross_data['traffic_sources'].items()
+            # Channel breakdown (pie chart)
+            st.markdown("#### 📊 Canais de Tráfego")
+            channels = cross_data.get('channels', {})
+            if channels:
+                channels_df = pd.DataFrame([
+                    {'Canal': k, 'Sessões': v}
+                    for k, v in channels.items()
                 ])
-                if not sources_df.empty:
-                    fig = px.pie(sources_df, values='Sessões', names='Fonte', hole=0.4)
-                    fig.update_layout(
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font={'color': '#F8FAFC'},
-                        height=300,
-                        margin=dict(t=20, b=20, l=20, r=20)
+                if not channels_df.empty:
+                    col_ch1, col_ch2 = st.columns([2, 1])
+                    with col_ch1:
+                        fig = px.pie(channels_df, values='Sessões', names='Canal', hole=0.4,
+                                    color_discrete_sequence=px.colors.qualitative.Set2)
+                        fig.update_layout(
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            font={'color': '#F8FAFC'},
+                            height=300,
+                            margin=dict(t=20, b=20, l=20, r=20),
+                            showlegend=True,
+                            legend=dict(orientation="h", yanchor="bottom", y=-0.2)
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    with col_ch2:
+                        total_sessions = sum(channels.values())
+                        for ch, sess in sorted(channels.items(), key=lambda x: x[1], reverse=True)[:6]:
+                            pct = (sess / total_sessions * 100) if total_sessions > 0 else 0
+                            st.markdown(f"**{ch}**: {sess:,} ({pct:.1f}%)")
+
+            # Traffic sources table
+            traffic_sources = cross_data.get('traffic_sources', [])
+            if traffic_sources:
+                st.markdown("#### 📡 Fontes de Tráfego (Source/Medium)")
+                sources_df = pd.DataFrame(traffic_sources)
+                if not sources_df.empty and 'source' in sources_df.columns:
+                    sources_df['Source/Medium'] = sources_df['source'] + ' / ' + sources_df['medium']
+                    st.dataframe(
+                        sources_df[['Source/Medium', 'sessions', 'users', 'conversions']].head(10),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            'Source/Medium': 'Fonte / Meio',
+                            'sessions': st.column_config.NumberColumn('Sessões', format='%d'),
+                            'users': st.column_config.NumberColumn('Usuários', format='%d'),
+                            'conversions': st.column_config.NumberColumn('Conversões', format='%d')
+                        }
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+
+            # Device breakdown
+            devices = cross_data.get('devices', {})
+            if devices:
+                st.markdown("#### 📱 Dispositivos")
+                device_cols = st.columns(len(devices))
+                device_icons = {'mobile': '📱', 'desktop': '💻', 'tablet': '📋'}
+                total_dev = sum(devices.values())
+                for i, (device, sess) in enumerate(devices.items()):
+                    pct = (sess / total_dev * 100) if total_dev > 0 else 0
+                    with device_cols[i]:
+                        st.metric(
+                            f"{device_icons.get(device.lower(), '📊')} {device.capitalize()}",
+                            f"{sess:,}",
+                            f"{pct:.1f}%"
+                        )
+
+            # Top landing pages
+            landing_pages = cross_data.get('landing_pages', [])
+            if landing_pages:
+                st.markdown("#### 🎯 Landing Pages (Conversão)")
+                lp_df = pd.DataFrame(landing_pages)
+                if not lp_df.empty:
+                    st.dataframe(
+                        lp_df.head(5),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            'path': 'Página',
+                            'sessions': st.column_config.NumberColumn('Sessões', format='%d'),
+                            'conversions': st.column_config.NumberColumn('Conversões', format='%d'),
+                            'conversion_rate': st.column_config.NumberColumn('Taxa Conv.', format='%.2f%%'),
+                            'bounce_rate': st.column_config.NumberColumn('Bounce Rate', format='%.1f%%')
+                        }
+                    )
 
         # ========== TAB 4: IMPROVEMENTS ==========
         with tab4:
