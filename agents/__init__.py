@@ -9,6 +9,7 @@ from .creative_lab import CreativeLabAgent
 from .audience_builder import AudienceBuilderAgent
 from .performance_optimizer import PerformanceOptimizerAgent
 from .design_agent import DesignAgent
+from .video_editor import VideoEditorAgent
 
 __all__ = [
     'BaseAgent',
@@ -19,4 +20,5 @@ __all__ = [
     'AudienceBuilderAgent',
     'PerformanceOptimizerAgent',
     'DesignAgent',
+    'VideoEditorAgent',
 ]

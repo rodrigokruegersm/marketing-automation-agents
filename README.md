@@ -111,6 +111,7 @@ streamlit run app.py
 | **Ad Launcher** | Gestao de anuncios | Ativo |
 | **Copy Forge** | Geracao de copies | Ativo |
 | **Design Agent** | Imagens com Leonardo.ai | Ativo |
+| **Video Editor** | Videos com Creatomate | Ativo |
 | **Creative Lab** | Criativos | Em dev |
 | **Audience Builder** | Publicos | Em dev |
 | **Performance Optimizer** | Otimizacao | Em dev |
@@ -128,6 +129,9 @@ META_AD_ACCOUNT_ID=act_xxxxx
 
 # AI Image Generation (Leonardo.ai)
 LEONARDO_API_KEY=sua_chave
+
+# AI Video Generation (Creatomate)
+CREATOMATE_API_KEY=sua_chave
 
 # Checkout
 WHOP_API_KEY=sua_chave

@@ -22,6 +22,7 @@ from core import (
     ProductRegistry, WhopAdapter, ClickFunnelsAdapter, HyrosAdapter
 )
 from dashboard.components.integrations import get_integration_styles
+from dashboard.components.creative_studio import render_creative_studio, get_creative_studio_styles
 from dashboard.auth import check_password, logout
 
 # =============================================================================
@@ -569,6 +570,9 @@ st.markdown("""
 
 # Add integration-specific styles
 st.markdown(get_integration_styles(), unsafe_allow_html=True)
+
+# Add Creative Studio styles
+st.markdown(get_creative_studio_styles(), unsafe_allow_html=True)
 
 # =============================================================================
 # API CONFIGURATION
@@ -1166,8 +1170,8 @@ if META_ACCESS_TOKEN and META_AD_ACCOUNT_ID:
             st.markdown("---")
 
             # TABS
-            tab_overview, tab_funnels, tab_checkout, tab_campaigns, tab_ai = st.tabs([
-                "📊 Overview", "🎯 Funis", "💰 Checkout", "📢 Campanhas", "🤖 IA"
+            tab_overview, tab_funnels, tab_checkout, tab_campaigns, tab_ai, tab_creative = st.tabs([
+                "📊 Overview", "🎯 Funis", "💰 Checkout", "📢 Campanhas", "🤖 IA", "🎬 Criativos"
             ])
 
             with tab_overview:
@@ -1322,6 +1326,10 @@ if META_ACCESS_TOKEN and META_AD_ACCOUNT_ID:
                         st.markdown(f"""<div class="{css}"><h3>{s['icon']} {s['title']}</h3><p>{s['message']}</p></div>""", unsafe_allow_html=True)
                 else:
                     st.success("✅ Metricas saudaveis!")
+
+            with tab_creative:
+                client_slug = st.session_state.selected_client or "brez-scales"
+                render_creative_studio(client_slug)
         else:
             st.warning("Sem dados para este periodo.")
     else:
