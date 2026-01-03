@@ -1,6 +1,6 @@
 """
 Design Agent
-AI-powered ad creative generation using Freepik API
+AI-powered ad creative generation using Leonardo.ai API
 
 Generates professional ad images for Meta, Google, and display campaigns
 with support for multiple formats, styles, and brand consistency.
@@ -13,16 +13,15 @@ import os
 from ..base import BaseAgent, AgentConfig, AgentResult
 
 try:
-    from core.adapters.freepik import (
-        FreepikAdapter,
-        FreepikModel,
-        FreepikEngine,
+    from core.adapters.leonardo import (
+        LeonardoAdapter,
+        LeonardoModel,
         AspectRatio,
         GeneratedImage
     )
-    FREEPIK_AVAILABLE = True
+    LEONARDO_AVAILABLE = True
 except ImportError:
-    FREEPIK_AVAILABLE = False
+    LEONARDO_AVAILABLE = False
 
 
 @dataclass
@@ -31,29 +30,28 @@ class AdCreative:
     name: str
     prompt: str
     format: str
-    aspect_ratio: str
-    task_id: str
+    aspect_ratio: tuple
+    generation_id: str
     status: str
     image_url: Optional[str] = None
-    model: str = "realism"
+    model: str = "lightning"
 
 
 class DesignAgent(BaseAgent):
     """
-    AI Agent for generating ad creatives using Freepik API.
+    AI Agent for generating ad creatives using Leonardo.ai API.
 
     Capabilities:
     - Generate ad images from product descriptions
     - Create multi-format ad sets (feed, story, display)
     - Apply brand-consistent styles
     - Generate variations for A/B testing
-    - Use reference images for style transfer
+    - PhotoReal mode for ultra-realistic images
 
     Actions:
     - generate_ad: Generate a single ad image
     - generate_ad_set: Generate complete ad set (multiple formats)
     - generate_variations: Generate multiple variations of same concept
-    - style_transfer: Apply style from reference image
 
     Usage:
         agent = DesignAgent()
@@ -68,44 +66,44 @@ class DesignAgent(BaseAgent):
 
     def __init__(self, config: Optional[AgentConfig] = None):
         super().__init__(config)
-        self.freepik: Optional[FreepikAdapter] = None
-        self._init_freepik()
+        self.leonardo: Optional[LeonardoAdapter] = None
+        self._init_leonardo()
 
-    def _init_freepik(self):
-        """Initialize Freepik adapter if API key available"""
-        if FREEPIK_AVAILABLE and os.getenv("FREEPIK_API_KEY"):
+    def _init_leonardo(self):
+        """Initialize Leonardo adapter if API key available"""
+        if LEONARDO_AVAILABLE and os.getenv("LEONARDO_API_KEY"):
             try:
-                self.freepik = FreepikAdapter()
+                self.leonardo = LeonardoAdapter()
             except Exception as e:
-                print(f"Warning: Could not initialize Freepik: {e}")
+                print(f"Warning: Could not initialize Leonardo: {e}")
 
     def _default_config(self) -> AgentConfig:
         return AgentConfig(
             name="DesignAgent",
-            description="AI-powered ad creative generation with Freepik",
-            version="1.0.0",
-            model="freepik-mystic",
+            description="AI-powered ad creative generation with Leonardo.ai",
+            version="2.0.0",
+            model="leonardo-lightning-xl",
             temperature=0.7,
             settings={
                 'supported_actions': [
                     'generate_ad',
                     'generate_ad_set',
-                    'generate_variations',
-                    'style_transfer'
+                    'generate_variations'
                 ],
-                'default_model': 'realism',
+                'default_model': 'lightning',
                 'formats': {
-                    'feed': 'square_1_1',
-                    'story': 'social_story_9_16',
-                    'display': 'widescreen_16_9',
-                    'portrait': 'portrait_4_5'
+                    'feed': 'SQUARE_HD',
+                    'story': 'STORY_HD',
+                    'display': 'WIDESCREEN_HD',
+                    'portrait': 'PORTRAIT'
                 },
                 'styles': {
                     'modern': 'clean, minimalist, professional, high-contrast',
                     'luxury': 'elegant, premium, sophisticated, rich colors',
                     'energetic': 'vibrant, dynamic, bold colors, high energy',
                     'organic': 'natural, soft, warm tones, authentic',
-                    'tech': 'futuristic, sleek, blue tones, digital'
+                    'tech': 'futuristic, sleek, blue tones, digital',
+                    'cinematic': 'cinematic lighting, dramatic, film quality'
                 }
             }
         )
@@ -119,10 +117,10 @@ class DesignAgent(BaseAgent):
                 - action: Action to perform
                 - product: Product/service description
                 - audience: Target audience
-                - style: Visual style (modern, luxury, energetic, organic, tech)
+                - style: Visual style (modern, luxury, energetic, organic, tech, cinematic)
                 - format: Ad format (feed, story, display, portrait)
-                - model: Freepik model (realism, fluid, zen, super_real)
-                - reference_image: Path to style reference image (optional)
+                - model: Leonardo model (lightning, photoreal, kino, diffusion)
+                - photo_real: Use PhotoReal mode for realistic images
                 - count: Number of variations (for generate_variations)
 
         Returns:
@@ -130,18 +128,18 @@ class DesignAgent(BaseAgent):
         """
         action = context.get('action', 'generate_ad')
 
-        if not FREEPIK_AVAILABLE:
+        if not LEONARDO_AVAILABLE:
             return AgentResult(
                 success=False,
                 data=None,
-                message="Freepik adapter not available. Install with: pip install requests"
+                message="Leonardo adapter not available. Install with: pip install requests"
             )
 
-        if not self.freepik:
+        if not self.leonardo:
             return AgentResult(
                 success=False,
                 data=None,
-                message="FREEPIK_API_KEY not configured. Set in environment variables."
+                message="LEONARDO_API_KEY not configured. Set in environment variables."
             )
 
         if action == 'generate_ad':
@@ -150,8 +148,6 @@ class DesignAgent(BaseAgent):
             return self._generate_ad_set(context)
         elif action == 'generate_variations':
             return self._generate_variations(context)
-        elif action == 'style_transfer':
-            return self._style_transfer(context)
         else:
             return AgentResult(
                 success=False,
@@ -181,6 +177,7 @@ class DesignAgent(BaseAgent):
         prompt_parts.append(f"Style: {style_desc}")
         prompt_parts.append("High quality, commercial photography")
         prompt_parts.append("Perfect for digital advertising")
+        prompt_parts.append("8k resolution, professional lighting")
 
         if audience:
             # Infer visual elements from audience
@@ -194,25 +191,26 @@ class DesignAgent(BaseAgent):
     def _get_aspect_ratio(self, format_name: str) -> AspectRatio:
         """Map format name to AspectRatio enum"""
         mapping = {
-            'feed': AspectRatio.SQUARE,
-            'story': AspectRatio.STORY,
-            'display': AspectRatio.WIDESCREEN,
+            'feed': AspectRatio.SQUARE_HD,
+            'story': AspectRatio.STORY_HD,
+            'display': AspectRatio.WIDESCREEN_HD,
             'portrait': AspectRatio.PORTRAIT,
-            'landscape': AspectRatio.LANDSCAPE
+            'square': AspectRatio.SQUARE
         }
-        return mapping.get(format_name, AspectRatio.SQUARE)
+        return mapping.get(format_name, AspectRatio.SQUARE_HD)
 
-    def _get_model(self, model_name: str) -> FreepikModel:
-        """Map model name to FreepikModel enum"""
+    def _get_model(self, model_name: str) -> LeonardoModel:
+        """Map model name to LeonardoModel enum"""
         mapping = {
-            'realism': FreepikModel.REALISM,
-            'fluid': FreepikModel.FLUID,
-            'zen': FreepikModel.ZEN,
-            'flexible': FreepikModel.FLEXIBLE,
-            'super_real': FreepikModel.SUPER_REAL,
-            'editorial': FreepikModel.EDITORIAL
+            'lightning': LeonardoModel.LEONARDO_LIGHTNING_XL,
+            'photoreal': LeonardoModel.PHOTOREAL_V2,
+            'kino': LeonardoModel.LEONARDO_KINO_XL,
+            'diffusion': LeonardoModel.LEONARDO_DIFFUSION_XL,
+            'vision': LeonardoModel.LEONARDO_VISION_XL,
+            'anime': LeonardoModel.ANIME_PASTEL_DREAM,
+            'dreamshaper': LeonardoModel.DREAMSHAPER_V7
         }
-        return mapping.get(model_name, FreepikModel.REALISM)
+        return mapping.get(model_name, LeonardoModel.LEONARDO_LIGHTNING_XL)
 
     def _generate_ad(self, context: Dict[str, Any]) -> AgentResult:
         """Generate a single ad image"""
@@ -220,19 +218,25 @@ class DesignAgent(BaseAgent):
 
         prompt = self._build_prompt(context)
         format_name = context.get('format', 'feed')
-        model_name = context.get('model', 'realism')
+        model_name = context.get('model', 'lightning')
+        photo_real = context.get('photo_real', False)
 
         aspect_ratio = self._get_aspect_ratio(format_name)
         model = self._get_model(model_name)
 
+        # Use PhotoReal model if requested
+        if photo_real:
+            model = LeonardoModel.PHOTOREAL_V2
+
         try:
-            result = self.freepik.generate_image(
+            result = self.leonardo.generate_image(
                 prompt=prompt,
                 aspect_ratio=aspect_ratio,
                 model=model,
-                resolution="2k",
-                hdr=60,
-                creative_detailing=40
+                num_images=1,
+                alchemy=True,
+                photo_real=photo_real,
+                negative_prompt="blurry, low quality, distorted, watermark, text, logo"
             )
 
             creative = AdCreative(
@@ -240,7 +244,7 @@ class DesignAgent(BaseAgent):
                 prompt=prompt,
                 format=format_name,
                 aspect_ratio=aspect_ratio.value,
-                task_id=result.task_id,
+                generation_id=result.generation_id,
                 status=result.status,
                 model=model_name
             )
@@ -249,11 +253,11 @@ class DesignAgent(BaseAgent):
                 success=True,
                 data={
                     'creative': creative.__dict__,
-                    'task_id': result.task_id,
+                    'generation_id': result.generation_id,
                     'status': result.status,
                     'prompt_used': prompt
                 },
-                message=f"Ad creative generation started. Task ID: {result.task_id}"
+                message=f"Ad creative generation started. Generation ID: {result.generation_id}"
             )
 
         except Exception as e:
@@ -269,8 +273,12 @@ class DesignAgent(BaseAgent):
 
         formats = context.get('formats', ['feed', 'story', 'display'])
         prompt = self._build_prompt(context)
-        model_name = context.get('model', 'realism')
+        model_name = context.get('model', 'lightning')
         model = self._get_model(model_name)
+        photo_real = context.get('photo_real', False)
+
+        if photo_real:
+            model = LeonardoModel.PHOTOREAL_V2
 
         creatives = []
         errors = []
@@ -278,17 +286,19 @@ class DesignAgent(BaseAgent):
         for format_name in formats:
             try:
                 aspect_ratio = self._get_aspect_ratio(format_name)
-                result = self.freepik.generate_image(
+                result = self.leonardo.generate_image(
                     prompt=prompt,
                     aspect_ratio=aspect_ratio,
                     model=model,
-                    resolution="2k"
+                    alchemy=True,
+                    photo_real=photo_real,
+                    negative_prompt="blurry, low quality, distorted, watermark, text, logo"
                 )
 
                 creatives.append({
                     'name': f"{context['product'][:30]} - {format_name}",
                     'format': format_name,
-                    'task_id': result.task_id,
+                    'generation_id': result.generation_id,
                     'status': result.status,
                     'aspect_ratio': aspect_ratio.value
                 })
@@ -316,10 +326,14 @@ class DesignAgent(BaseAgent):
 
         count = min(context.get('count', 3), 10)  # Max 10 variations
         format_name = context.get('format', 'feed')
-        model_name = context.get('model', 'realism')
+        model_name = context.get('model', 'lightning')
+        photo_real = context.get('photo_real', False)
 
         aspect_ratio = self._get_aspect_ratio(format_name)
         model = self._get_model(model_name)
+
+        if photo_real:
+            model = LeonardoModel.PHOTOREAL_V2
 
         variations = []
         base_prompt = self._build_prompt(context)
@@ -343,17 +357,19 @@ class DesignAgent(BaseAgent):
             prompt = f"{base_prompt}, {modifier}" if modifier else base_prompt
 
             try:
-                result = self.freepik.generate_image(
+                result = self.leonardo.generate_image(
                     prompt=prompt,
                     aspect_ratio=aspect_ratio,
                     model=model,
-                    resolution="2k"
+                    alchemy=True,
+                    photo_real=photo_real,
+                    negative_prompt="blurry, low quality, distorted, watermark, text, logo"
                 )
 
                 variations.append({
                     'variation': i + 1,
                     'modifier': modifier or 'base',
-                    'task_id': result.task_id,
+                    'generation_id': result.generation_id,
                     'status': result.status,
                     'prompt': prompt
                 })
@@ -374,78 +390,51 @@ class DesignAgent(BaseAgent):
             message=f"Generated {len(variations)} variations"
         )
 
-    def _style_transfer(self, context: Dict[str, Any]) -> AgentResult:
-        """Apply style from reference image"""
-        self.validate_context(context, ['product', 'reference_image'])
-
-        reference_path = context['reference_image']
-        format_name = context.get('format', 'feed')
-        model_name = context.get('model', 'realism')
+    def check_status(self, generation_id: str) -> Dict[str, Any]:
+        """Check status of a generation"""
+        if not self.leonardo:
+            return {'error': 'Leonardo not initialized'}
 
         try:
-            # Convert reference image to base64
-            style_reference = self.freepik.image_to_base64(reference_path)
-
-            prompt = self._build_prompt(context)
-            aspect_ratio = self._get_aspect_ratio(format_name)
-            model = self._get_model(model_name)
-
-            result = self.freepik.generate_image(
-                prompt=prompt,
-                aspect_ratio=aspect_ratio,
-                model=model,
-                style_reference=style_reference,
-                resolution="2k"
-            )
-
-            return AgentResult(
-                success=True,
-                data={
-                    'task_id': result.task_id,
-                    'status': result.status,
-                    'prompt_used': prompt,
-                    'reference_used': reference_path
-                },
-                message=f"Style transfer started. Task ID: {result.task_id}"
-            )
-
-        except FileNotFoundError:
-            return AgentResult(
-                success=False,
-                data=None,
-                message=f"Reference image not found: {reference_path}"
-            )
-        except Exception as e:
-            return AgentResult(
-                success=False,
-                data=None,
-                message=f"Style transfer failed: {str(e)}"
-            )
-
-    def check_status(self, task_id: str) -> Dict[str, Any]:
-        """Check status of a generation task"""
-        if not self.freepik:
-            return {'error': 'Freepik not initialized'}
-
-        try:
-            return self.freepik.get_task_status(task_id)
+            return self.leonardo.get_generation(generation_id)
         except Exception as e:
             return {'error': str(e)}
 
-    def download_result(self, task_id: str, save_dir: str = "./generated") -> Optional[str]:
-        """Download completed generation to local file"""
-        if not self.freepik:
+    def wait_and_download(self, generation_id: str, save_dir: str = "./generated") -> Optional[List[str]]:
+        """Wait for completion and download all images"""
+        if not self.leonardo:
             return None
 
         try:
-            status = self.freepik.wait_for_completion(task_id)
-            if status.get('status') == 'COMPLETED':
-                images = status.get('generated', [])
-                if images:
-                    os.makedirs(save_dir, exist_ok=True)
-                    save_path = f"{save_dir}/{task_id}.png"
-                    return self.freepik.download_image(images[0], save_path)
+            result = self.leonardo.wait_for_completion(generation_id)
+            if result.get('status') == 'COMPLETE':
+                images = result.get('generated_images', [])
+                downloaded = []
+                os.makedirs(save_dir, exist_ok=True)
+
+                for i, img in enumerate(images):
+                    url = img.get('url')
+                    if url:
+                        save_path = f"{save_dir}/{generation_id}_{i}.png"
+                        self.leonardo.download_image(url, save_path)
+                        downloaded.append(save_path)
+
+                return downloaded
         except Exception as e:
             print(f"Download failed: {e}")
 
         return None
+
+    def get_credits(self) -> Dict[str, Any]:
+        """Get remaining API credits"""
+        if not self.leonardo:
+            return {'error': 'Leonardo not initialized'}
+
+        try:
+            user_info = self.leonardo.get_user_info()
+            return {
+                'api_credits': user_info.get('user_details', [{}])[0].get('apiConcurrencySlots', 0),
+                'subscription_tokens': user_info.get('user_details', [{}])[0].get('subscriptionTokens', 0)
+            }
+        except Exception as e:
+            return {'error': str(e)}

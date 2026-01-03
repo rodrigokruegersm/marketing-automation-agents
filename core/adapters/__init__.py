@@ -1,14 +1,13 @@
 """
 Platform Adapters
-Connectors for external platforms (Meta, Hyros, Freepik, etc.)
+Connectors for external platforms (Meta, Hyros, Leonardo.ai, etc.)
 """
 
 from .meta_ads import MetaAdsAdapter
 from .hyros import HyrosAdapter
-from .freepik import (
-    FreepikAdapter,
-    FreepikModel,
-    FreepikEngine,
+from .leonardo import (
+    LeonardoAdapter,
+    LeonardoModel,
     AspectRatio,
     GeneratedImage
 )
@@ -16,9 +15,8 @@ from .freepik import (
 __all__ = [
     'MetaAdsAdapter',
     'HyrosAdapter',
-    'FreepikAdapter',
-    'FreepikModel',
-    'FreepikEngine',
+    'LeonardoAdapter',
+    'LeonardoModel',
     'AspectRatio',
     'GeneratedImage'
 ]
