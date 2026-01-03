@@ -720,6 +720,12 @@ def fetch_campaigns(account_id: str, token: str):
     try:
         response = requests.get(url, params=params)
         data = response.json()
+        # Check for API errors
+        if 'error' in data:
+            error_msg = data['error'].get('message', 'Unknown error')
+            error_code = data['error'].get('code', 'N/A')
+            st.error(f"Meta API Error ({error_code}): {error_msg}")
+            return []
         return data.get('data', [])
     except Exception as e:
         st.error(f"Error fetching campaigns: {e}")
