@@ -580,21 +580,36 @@ st.markdown(get_creative_studio_styles(), unsafe_allow_html=True)
 
 def get_client_credentials(client_slug: str = None):
     """Get API credentials for a client"""
+    token = ""
+    account_id = ""
+
+    # Try Streamlit secrets first
     try:
         if client_slug:
-            return {
-                'token': st.secrets.get(f"{client_slug.upper()}_META_ACCESS_TOKEN", st.secrets.get("META_ACCESS_TOKEN", "")),
-                'account_id': st.secrets.get(f"{client_slug.upper()}_META_AD_ACCOUNT_ID", st.secrets.get("META_AD_ACCOUNT_ID", ""))
-            }
-        return {
-            'token': st.secrets.get("META_ACCESS_TOKEN", ""),
-            'account_id': st.secrets.get("META_AD_ACCOUNT_ID", "")
-        }
-    except:
-        return {
-            'token': os.getenv('META_ACCESS_TOKEN', ''),
-            'account_id': os.getenv('META_AD_ACCOUNT_ID', '')
-        }
+            token = st.secrets.get(f"{client_slug.upper()}_META_ACCESS_TOKEN", "")
+            account_id = st.secrets.get(f"{client_slug.upper()}_META_AD_ACCOUNT_ID", "")
+
+        if not token:
+            token = st.secrets.get("META_ACCESS_TOKEN", "")
+        if not account_id:
+            account_id = st.secrets.get("META_AD_ACCOUNT_ID", "")
+    except Exception:
+        pass
+
+    # Fallback to direct secrets access
+    if not token:
+        try:
+            token = st.secrets["META_ACCESS_TOKEN"]
+        except (KeyError, FileNotFoundError):
+            token = os.getenv('META_ACCESS_TOKEN', '')
+
+    if not account_id:
+        try:
+            account_id = st.secrets["META_AD_ACCOUNT_ID"]
+        except (KeyError, FileNotFoundError):
+            account_id = os.getenv('META_AD_ACCOUNT_ID', '')
+
+    return {'token': token, 'account_id': account_id}
 
 
 def get_checkout_credentials():
@@ -1094,6 +1109,11 @@ if st.session_state.show_settings:
     st.markdown("---")
 
 if META_ACCESS_TOKEN and META_AD_ACCOUNT_ID:
+    # Debug info (collapsible)
+    with st.expander("🔧 Debug Info", expanded=False):
+        st.write(f"**Account ID:** {META_AD_ACCOUNT_ID}")
+        st.write(f"**Token (last 10 chars):** ...{META_ACCESS_TOKEN[-10:] if len(META_ACCESS_TOKEN) > 10 else 'N/A'}")
+
     client_registry, funnel_registry, product_registry = init_registries()
 
     with st.spinner("Carregando..."):
