@@ -38,5 +38,25 @@
     "agent": "copy-forge",
     "command": "generate_variations",
     "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-03T20:42:35.884789",
+    "kpi": "roas",
+    "value": 1.5062521444661585,
+    "level": "warning",
+    "action": "OPTIMIZE_TARGETING",
+    "agent": "data-pulse",
+    "command": "analyze_audiences",
+    "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-03T20:42:35.884934",
+    "kpi": "cpp",
+    "value": 25.68314176245211,
+    "level": "warning",
+    "action": "REVIEW_CREATIVES",
+    "agent": "copy-forge",
+    "command": "generate_variations",
+    "urgency": "within_24h"
   }
 ]
