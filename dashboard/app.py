@@ -162,6 +162,60 @@ st.markdown("""
         padding: 16px 20px; margin-bottom: 20px;
         display: flex; align-items: center; justify-content: space-between;
     }
+
+    /* Project Selector */
+    .project-selector {
+        background: #0F172A;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 16px;
+    }
+    .project-selector-label {
+        font-size: 10px;
+        color: #64748B !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+    }
+    .project-selector-current {
+        font-size: 14px;
+        font-weight: 600;
+        color: #F8FAFC !important;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Tag Filter */
+    .tag-filter-container {
+        background: #1E293B;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+    }
+    .tag-chip {
+        display: inline-block;
+        background: rgba(0, 102, 255, 0.2);
+        color: #60A5FA !important;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-right: 6px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+    .tag-chip:hover {
+        background: rgba(0, 102, 255, 0.4);
+        border-color: #0066FF;
+    }
+    .tag-chip.active {
+        background: #0066FF;
+        color: #FFFFFF !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -177,6 +231,30 @@ if 'custom_start_date' not in st.session_state:
     st.session_state.custom_start_date = date.today() - timedelta(days=7)
 if 'custom_end_date' not in st.session_state:
     st.session_state.custom_end_date = date.today() - timedelta(days=1)
+if 'selected_project' not in st.session_state:
+    st.session_state.selected_project = 'Brazz Scales'
+if 'campaign_tag_filter' not in st.session_state:
+    st.session_state.campaign_tag_filter = ''
+
+# =============================================================================
+# PROJECTS CONFIG
+# =============================================================================
+
+PROJECTS = {
+    'Brazz Scales': {
+        'id': 'brazz-scales',
+        'icon': '⚖️',
+        'description': 'E-commerce de balanças',
+        'default_tags': ['[bsb]', '[bs]', '[brazz]']
+    },
+    # Adicione novos projetos aqui:
+    # 'Novo Projeto': {
+    #     'id': 'novo-projeto',
+    #     'icon': '🚀',
+    #     'description': 'Descrição do projeto',
+    #     'default_tags': ['[tag1]', '[tag2]']
+    # },
+}
 
 # =============================================================================
 # API CONFIG
@@ -582,6 +660,33 @@ def generate_ai_analysis(metrics_3d, metrics_7d, campaigns):
 # =============================================================================
 
 with st.sidebar:
+    # Project Selector (above logo)
+    st.markdown('<div class="project-selector-label">PROJETO ATUAL</div>', unsafe_allow_html=True)
+    selected_project = st.selectbox(
+        "Projeto",
+        list(PROJECTS.keys()),
+        index=list(PROJECTS.keys()).index(st.session_state.selected_project),
+        key="project_selector",
+        label_visibility="collapsed"
+    )
+    if selected_project != st.session_state.selected_project:
+        st.session_state.selected_project = selected_project
+        st.session_state.campaign_tag_filter = ''  # Reset tag filter on project change
+        st.rerun()
+
+    current_project = PROJECTS[st.session_state.selected_project]
+    st.markdown(f"""
+    <div class="project-selector">
+        <div class="project-selector-current">
+            {current_project['icon']} {st.session_state.selected_project}
+        </div>
+        <div style="font-size: 11px; color: #64748B !important; margin-top: 4px;">
+            {current_project['description']}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Logo
     st.markdown("""
     <div class="logo-container">
         <div class="logo-main">
@@ -632,8 +737,12 @@ creds = get_credentials()
 if st.session_state.current_page == 'dashboard':
     st.markdown("## 🏠 Dashboard Principal")
 
-    # Date filter
-    col1, col2, col3 = st.columns([2, 1, 1])
+    # Get current project info
+    current_project = PROJECTS[st.session_state.selected_project]
+
+    # Filters row
+    col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
+
     with col1:
         date_options = {
             'Hoje': 'today',
@@ -643,16 +752,150 @@ if st.session_state.current_page == 'dashboard':
             'Últimos 14 dias': 'last_14d',
             'Últimos 30 dias': 'last_30d'
         }
-        selected_date = st.selectbox("Período", list(date_options.keys()), index=3)
+        selected_date = st.selectbox("Período", list(date_options.keys()), index=3, key="dash_date")
         date_preset = date_options[selected_date]
+
+    with col2:
+        # Campaign tag filter
+        tag_filter = st.text_input(
+            "Filtrar por Tag",
+            value=st.session_state.campaign_tag_filter,
+            placeholder="Ex: [bsb], [promo], etc.",
+            key="dash_tag_filter"
+        )
+        if tag_filter != st.session_state.campaign_tag_filter:
+            st.session_state.campaign_tag_filter = tag_filter
+
     with col3:
-        if st.button("🔄 Atualizar", use_container_width=True):
+        # Quick tag buttons
+        st.markdown('<p style="font-size: 12px; color: #94A3B8; margin-bottom: 4px;">Tags rápidas:</p>', unsafe_allow_html=True)
+        tag_cols = st.columns(len(current_project['default_tags']))
+        for i, tag in enumerate(current_project['default_tags']):
+            with tag_cols[i]:
+                is_active = st.session_state.campaign_tag_filter == tag
+                if st.button(tag, key=f"quick_tag_{i}", use_container_width=True):
+                    if is_active:
+                        st.session_state.campaign_tag_filter = ''
+                    else:
+                        st.session_state.campaign_tag_filter = tag
+                    st.rerun()
+
+    with col4:
+        if st.button("🔄 Atualizar", use_container_width=True, key="dash_refresh"):
             st.cache_data.clear()
             st.rerun()
 
+    # Show active filter
+    if st.session_state.campaign_tag_filter:
+        st.markdown(f"""
+        <div style="background: rgba(0, 102, 255, 0.1); border: 1px solid #0066FF; border-radius: 8px; padding: 8px 16px; margin-bottom: 16px;">
+            <span style="color: #60A5FA;">🏷️ Filtrando por: <strong>{st.session_state.campaign_tag_filter}</strong></span>
+            <span style="color: #94A3B8; font-size: 12px; margin-left: 16px;">Apenas campanhas com esta tag serão exibidas</span>
+        </div>
+        """, unsafe_allow_html=True)
+
     if creds['meta_token'] and creds['meta_account']:
-        insights = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset)
-        metrics = parse_full_metrics(insights)
+        # Fetch campaigns to filter by tag
+        all_campaigns = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], date_preset=date_preset)
+
+        # Filter campaigns by tag if specified
+        if st.session_state.campaign_tag_filter:
+            tag = st.session_state.campaign_tag_filter.lower()
+            filtered_campaigns = [c for c in all_campaigns if tag in c.get('name', '').lower()]
+        else:
+            filtered_campaigns = all_campaigns
+
+        # Aggregate metrics from filtered campaigns
+        def aggregate_campaign_metrics(campaigns):
+            """Aggregate metrics from multiple campaigns"""
+            total_spend = 0
+            total_revenue = 0
+            total_impressions = 0
+            total_reach = 0
+            total_clicks = 0
+            total_link_clicks = 0
+            total_lp_views = 0
+            total_checkouts = 0
+            total_purchases = 0
+            total_video_25 = 0
+
+            for camp in campaigns:
+                camp_data = camp.get('insights', {}).get('data', [{}])[0] if camp.get('insights') else {}
+                if camp_data:
+                    total_spend += float(camp_data.get('spend', 0))
+                    total_impressions += int(camp_data.get('impressions', 0))
+                    total_reach += int(camp_data.get('reach', 0))
+                    total_clicks += int(camp_data.get('clicks', 0))
+
+                    # Actions
+                    actions = camp_data.get('actions', [])
+                    for a in actions:
+                        at = a.get('action_type')
+                        val = float(a.get('value', 0))
+                        if at == 'purchase':
+                            total_purchases += val
+                        elif at == 'landing_page_view':
+                            total_lp_views += val
+                        elif at == 'initiate_checkout':
+                            total_checkouts += val
+                        elif at == 'link_click':
+                            total_link_clicks += val
+
+                    # Action values
+                    action_values = camp_data.get('action_values', [])
+                    for av in action_values:
+                        if av.get('action_type') == 'purchase':
+                            total_revenue += float(av.get('value', 0))
+
+                    # Video views
+                    video_25 = camp_data.get('video_p25_watched_actions', [])
+                    for v in video_25:
+                        total_video_25 += float(v.get('value', 0))
+
+            roas = total_revenue / total_spend if total_spend > 0 else 0
+            profit = total_revenue - total_spend
+            cpa = total_spend / total_purchases if total_purchases > 0 else 0
+            ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
+            cpm = (total_spend / total_impressions * 1000) if total_impressions > 0 else 0
+            cpc = total_spend / total_clicks if total_clicks > 0 else 0
+            frequency = total_impressions / total_reach if total_reach > 0 else 0
+            lp_rate = (total_lp_views / total_link_clicks * 100) if total_link_clicks > 0 else 0
+            hook_rate = (total_video_25 / total_impressions * 100) if total_impressions > 0 else 0
+
+            return {
+                'spend': total_spend,
+                'revenue': total_revenue,
+                'profit': profit,
+                'roas': roas,
+                'impressions': int(total_impressions),
+                'reach': int(total_reach),
+                'clicks': int(total_clicks),
+                'link_clicks': int(total_link_clicks),
+                'ctr': ctr,
+                'cpc': cpc,
+                'cpm': cpm,
+                'frequency': frequency,
+                'purchases': int(total_purchases),
+                'cpa': cpa,
+                'landing_page_views': int(total_lp_views),
+                'lp_view_rate': lp_rate,
+                'initiate_checkout': int(total_checkouts),
+                'hook_rate': hook_rate,
+                'campaign_count': len(campaigns)
+            }
+
+        # Get aggregated metrics
+        if filtered_campaigns:
+            metrics = aggregate_campaign_metrics(filtered_campaigns)
+        else:
+            # Fallback to account insights if no campaigns match
+            insights = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset=date_preset)
+            metrics = parse_full_metrics(insights)
+            metrics['campaign_count'] = len(all_campaigns)
+
+        # Show campaign count
+        if st.session_state.campaign_tag_filter:
+            st.markdown(f"**{metrics.get('campaign_count', 0)} campanhas** encontradas com a tag `{st.session_state.campaign_tag_filter}`")
 
         # KPI Row
         st.markdown("### Resumo")
