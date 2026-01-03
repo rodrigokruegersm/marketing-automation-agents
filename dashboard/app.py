@@ -52,17 +52,16 @@ st.session_state["sidebar_state"] = "expanded"
 st.markdown("""
 <style>
     /* ============================================
-       ADLYTICS - Clean Minimal Theme
+       ADLYTICS - Dark Mode Theme
        Intelligence for Scale
-       HIGH CONTRAST VERSION
        ============================================ */
 
     /* Import Inter font */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    /* Base - Clean Light Background */
+    /* Base - Dark Background */
     .stApp {
-        background-color: #F8FAFC !important;
+        background: linear-gradient(135deg, #0A1628 0%, #1E293B 100%) !important;
         font-family: 'Inter', sans-serif !important;
     }
     .block-container {
@@ -71,39 +70,39 @@ st.markdown("""
     }
 
     /* ============================================
-       TYPOGRAPHY - Explicit dark colors on light bg
+       TYPOGRAPHY - White text on dark bg
        ============================================ */
     h1, h2, h3 {
-        color: #0A1628 !important;
+        color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
     }
     p, span, div, label {
-        color: #1E293B !important;
+        color: #F8FAFC !important;
     }
     h1 { font-size: 1.75rem !important; font-weight: 700 !important; letter-spacing: -0.02em !important; }
     h2 { font-size: 1.125rem !important; font-weight: 600 !important; margin-top: 1.25rem !important; }
     h3 { font-size: 0.95rem !important; font-weight: 600 !important; }
 
     /* ============================================
-       METRICS CARDS - White bg, dark text
+       METRICS CARDS - Dark bg, white text
        ============================================ */
     [data-testid="stMetric"] {
-        background: #FFFFFF !important;
-        border: 1px solid #E2E8F0 !important;
+        background: #1E293B !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 12px !important;
         padding: 1rem !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
     }
     [data-testid="stMetricLabel"],
     [data-testid="stMetricLabel"] * {
-        color: #475569 !important;
+        color: #94A3B8 !important;
         font-size: 0.7rem !important;
         text-transform: uppercase !important;
         letter-spacing: 0.05em !important;
     }
     [data-testid="stMetricValue"],
     [data-testid="stMetricValue"] * {
-        color: #0A1628 !important;
+        color: #FFFFFF !important;
         font-size: 1.5rem !important;
         font-weight: 700 !important;
     }
@@ -121,13 +120,13 @@ st.markdown("""
         font-weight: 600 !important;
         font-family: 'Inter', sans-serif !important;
         transition: all 0.2s ease !important;
-        box-shadow: 0 1px 2px rgba(0, 102, 255, 0.1) !important;
+        box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3) !important;
     }
     .stButton > button:hover {
         background: #0052CC !important;
         color: #FFFFFF !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25) !important;
+        box-shadow: 0 4px 16px rgba(0, 102, 255, 0.4) !important;
     }
 
     /* ============================================
@@ -148,104 +147,104 @@ st.markdown("""
         color: #FFFFFF !important;
     }
     .funnel-pill-inactive {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        color: #475569 !important;
+        background: #1E293B;
+        border: 1px solid #475569;
+        color: #94A3B8 !important;
     }
     .funnel-pill:hover {
         border-color: #0066FF;
     }
 
     /* ============================================
-       CARDS - White bg, dark text
+       CARDS - Dark bg, white text
        ============================================ */
     .command-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
+        background: #1E293B;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1.5rem;
         margin-bottom: 1rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        color: #1E293B !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        color: #FFFFFF !important;
     }
     .command-card h3, .command-card h4, .command-card p, .command-card span {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       FUNNEL CARDS - White bg, dark text
+       FUNNEL CARDS - Dark bg, white text
        ============================================ */
     .funnel-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
+        background: #1E293B;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1rem;
         margin-bottom: 0.75rem;
         transition: all 0.2s;
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .funnel-card h3, .funnel-card h4, .funnel-card p, .funnel-card span {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .funnel-card:hover {
         border-color: #0066FF;
-        box-shadow: 0 4px 12px rgba(0, 102, 255, 0.1);
+        box-shadow: 0 4px 16px rgba(0, 102, 255, 0.2);
     }
     .funnel-card-critical { border-left: 4px solid #EF4444; }
     .funnel-card-warning { border-left: 4px solid #F59E0B; }
     .funnel-card-healthy { border-left: 4px solid #10B981; }
 
     /* ============================================
-       AI SUGGESTION BOXES - Light colored bg, dark text
+       AI SUGGESTION BOXES - Dark colored bg, white text
        ============================================ */
     .ai-suggestion {
-        background: #EFF6FF;
+        background: rgba(59, 130, 246, 0.15);
         border: 1px solid #3B82F6;
         border-left: 4px solid #3B82F6;
         border-radius: 12px;
         padding: 1rem 1.5rem;
         margin: 0.5rem 0;
-        color: #1E3A5F !important;
+        color: #FFFFFF !important;
     }
     .ai-suggestion h3, .ai-suggestion h4, .ai-suggestion p, .ai-suggestion span {
-        color: #1E3A5F !important;
+        color: #FFFFFF !important;
     }
     .ai-suggestion-critical {
-        background: #FEF2F2;
+        background: rgba(239, 68, 68, 0.15);
         border-color: #EF4444;
-        color: #7F1D1D !important;
+        color: #FFFFFF !important;
     }
     .ai-suggestion-critical h3, .ai-suggestion-critical h4, .ai-suggestion-critical p, .ai-suggestion-critical span {
-        color: #7F1D1D !important;
+        color: #FFFFFF !important;
     }
     .ai-suggestion-opportunity {
-        background: #F0FDF4;
+        background: rgba(16, 185, 129, 0.15);
         border-color: #10B981;
-        color: #14532D !important;
+        color: #FFFFFF !important;
     }
     .ai-suggestion-opportunity h3, .ai-suggestion-opportunity h4, .ai-suggestion-opportunity p, .ai-suggestion-opportunity span {
-        color: #14532D !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       CAMPAIGN ROW - White bg, dark text
+       CAMPAIGN ROW - Dark bg, white text
        ============================================ */
     .campaign-row {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
+        background: #1E293B;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1rem;
         margin: 0.5rem 0;
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .campaign-row h3, .campaign-row h4, .campaign-row p, .campaign-row span {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
 
-    /* Status Badges - High contrast colors */
-    .status-active { color: #059669 !important; font-weight: 600; }
-    .status-paused { color: #D97706 !important; font-weight: 600; }
-    .status-error { color: #DC2626 !important; font-weight: 600; }
+    /* Status Badges - Bright colors on dark */
+    .status-active { color: #34D399 !important; font-weight: 600; }
+    .status-paused { color: #FBBF24 !important; font-weight: 600; }
+    .status-error { color: #F87171 !important; font-weight: 600; }
 
     /* ============================================
        SIDEBAR - Dark bg, white text
@@ -273,29 +272,29 @@ st.markdown("""
     }
 
     /* ============================================
-       MAIN AREA SELECTBOX - White bg, dark text
+       MAIN AREA SELECTBOX - Dark bg, white text
        ============================================ */
     .stSelectbox > div > div {
-        background: #FFFFFF !important;
-        border-color: #E2E8F0 !important;
+        background: #1E293B !important;
+        border-color: #475569 !important;
         border-radius: 8px !important;
     }
     .stSelectbox * {
-        color: #0A1628 !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       TABS - Light bg, dark/blue text
+       TABS - Dark bg, white/blue text
        ============================================ */
     .stTabs [data-baseweb="tab-list"] {
         background: transparent !important;
         gap: 0.5rem !important;
-        border-bottom: 1px solid #E2E8F0 !important;
+        border-bottom: 1px solid #475569 !important;
     }
     .stTabs [data-baseweb="tab"] {
         background: transparent !important;
         border-radius: 0 !important;
-        color: #475569 !important;
+        color: #94A3B8 !important;
         border-bottom: 2px solid transparent !important;
     }
     .stTabs [aria-selected="true"] {
@@ -308,47 +307,47 @@ st.markdown("""
     #MainMenu, footer, header { visibility: hidden !important; }
 
     /* ============================================
-       ALERTS - White bg, dark text
+       ALERTS - Dark bg, white text
        ============================================ */
     .stAlert {
-        background: #FFFFFF !important;
-        border: 1px solid #E2E8F0 !important;
+        background: #1E293B !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 8px !important;
     }
     .stAlert * {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       INTEGRATION CARDS - White bg, dark text
+       INTEGRATION CARDS - Dark bg, white text
        ============================================ */
     .integration-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
+        background: #1E293B;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1rem;
         margin-bottom: 0.5rem;
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .integration-card h3, .integration-card h4, .integration-card p, .integration-card span {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .integration-connected { border-left: 4px solid #10B981; }
     .integration-disconnected { border-left: 4px solid #EF4444; }
 
     /* ============================================
-       PRODUCT CARD - White bg, dark text
+       PRODUCT CARD - Dark bg, white text
        ============================================ */
     .product-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
+        background: #1E293B;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1.25rem;
         margin-bottom: 1rem;
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .product-card h3, .product-card h4, .product-card p, .product-card span {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .platform-badge {
         background: #0066FF;
@@ -361,79 +360,79 @@ st.markdown("""
     }
 
     /* ============================================
-       CPP ANALYSIS - Colored bg, appropriate dark text
+       CPP ANALYSIS - Dark colored bg, white text
        ============================================ */
     .cpp-analysis {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
+        background: #1E293B;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .cpp-analysis h3, .cpp-analysis h4, .cpp-analysis p, .cpp-analysis span {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .cpp-excellent {
         border-left: 4px solid #10B981;
-        background: #ECFDF5;
+        background: rgba(16, 185, 129, 0.15);
     }
     .cpp-excellent h3, .cpp-excellent h4, .cpp-excellent p, .cpp-excellent span {
-        color: #065F46 !important;
+        color: #FFFFFF !important;
     }
     .cpp-good {
         border-left: 4px solid #10B981;
-        background: #FFFFFF;
+        background: #1E293B;
     }
     .cpp-warning {
         border-left: 4px solid #F59E0B;
-        background: #FFFBEB;
+        background: rgba(245, 158, 11, 0.15);
     }
     .cpp-warning h3, .cpp-warning h4, .cpp-warning p, .cpp-warning span {
-        color: #92400E !important;
+        color: #FFFFFF !important;
     }
     .cpp-critical {
         border-left: 4px solid #EF4444;
-        background: #FEF2F2;
+        background: rgba(239, 68, 68, 0.15);
     }
     .cpp-critical h3, .cpp-critical h4, .cpp-critical p, .cpp-critical span {
-        color: #991B1B !important;
+        color: #FFFFFF !important;
     }
     .cpp-threshold {
-        background: #F1F5F9;
+        background: #0A1628;
         padding: 0.5rem 1rem;
         border-radius: 8px;
         text-align: center;
-        border: 1px solid #E2E8F0;
-        color: #334155 !important;
+        border: 1px solid #475569;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       CHECKOUT SALES CARD - White bg, dark text
+       CHECKOUT SALES CARD - Dark bg, white text
        ============================================ */
     .checkout-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
+        background: #1E293B;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 1rem;
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .checkout-card h3, .checkout-card h4, .checkout-card p, .checkout-card span {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       HYROS ATTRIBUTION - Blue-tinted bg, dark blue text
+       HYROS ATTRIBUTION - Dark blue-tinted bg, white text
        ============================================ */
     .hyros-card {
-        background: #EFF6FF;
+        background: rgba(59, 130, 246, 0.15);
         border: 1px solid #3B82F6;
         border-radius: 12px;
         padding: 1.25rem;
-        color: #1E3A5F !important;
+        color: #FFFFFF !important;
     }
     .hyros-card h3, .hyros-card h4, .hyros-card p, .hyros-card span {
-        color: #1E3A5F !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
@@ -451,100 +450,105 @@ st.markdown("""
         letter-spacing: -0.02em;
     }
     .adlytics-logo-ad { color: #0066FF !important; }
-    .adlytics-logo-lytics { color: #0A1628 !important; }
+    .adlytics-logo-lytics { color: #FFFFFF !important; }
     .adlytics-tagline {
-        color: #64748B !important;
+        color: #94A3B8 !important;
         font-size: 0.875rem;
         font-weight: 400;
     }
 
     /* ============================================
-       EXPANDER - White bg, dark text
+       EXPANDER - Dark bg, white text
        ============================================ */
     .streamlit-expanderHeader {
-        background: #FFFFFF !important;
-        border: 1px solid #E2E8F0 !important;
+        background: #1E293B !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 8px !important;
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .streamlit-expanderHeader * {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .streamlit-expanderContent {
-        background: #FFFFFF !important;
-        color: #1E293B !important;
+        background: #1E293B !important;
+        color: #FFFFFF !important;
     }
     .streamlit-expanderContent * {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       TEXT INPUT - White bg, dark text
+       TEXT INPUT - Dark bg, white text
        ============================================ */
     .stTextInput > div > div > input {
-        background: #FFFFFF !important;
-        color: #0A1628 !important;
-        border-color: #E2E8F0 !important;
+        background: #1E293B !important;
+        color: #FFFFFF !important;
+        border-color: #475569 !important;
     }
     .stTextInput label {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
-       DATE INPUT - White bg, dark text
+       DATE INPUT - Dark bg, white text
        ============================================ */
     .stDateInput > div > div > input {
-        background: #FFFFFF !important;
-        color: #0A1628 !important;
+        background: #1E293B !important;
+        color: #FFFFFF !important;
+        border-color: #475569 !important;
     }
 
     /* ============================================
-       DATAFRAME/TABLE - White bg, dark text
+       DATAFRAME/TABLE - Dark bg, white text
        ============================================ */
     .stDataFrame {
-        background: #FFFFFF !important;
+        background: #1E293B !important;
     }
     .stDataFrame * {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
        CAPTION - Muted text
        ============================================ */
     .stCaption, .stCaption * {
-        color: #64748B !important;
+        color: #94A3B8 !important;
     }
 
     /* ============================================
-       INFO/WARNING/ERROR BOXES
+       INFO/WARNING/ERROR BOXES - Dark theme
        ============================================ */
     .stInfo {
-        background: #EFF6FF !important;
-        color: #1E40AF !important;
+        background: rgba(59, 130, 246, 0.15) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #3B82F6 !important;
     }
     .stInfo * {
-        color: #1E40AF !important;
+        color: #FFFFFF !important;
     }
     .stWarning {
-        background: #FFFBEB !important;
-        color: #92400E !important;
+        background: rgba(245, 158, 11, 0.15) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #F59E0B !important;
     }
     .stWarning * {
-        color: #92400E !important;
+        color: #FFFFFF !important;
     }
     .stError {
-        background: #FEF2F2 !important;
-        color: #991B1B !important;
+        background: rgba(239, 68, 68, 0.15) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #EF4444 !important;
     }
     .stError * {
-        color: #991B1B !important;
+        color: #FFFFFF !important;
     }
     .stSuccess {
-        background: #ECFDF5 !important;
-        color: #065F46 !important;
+        background: rgba(16, 185, 129, 0.15) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #10B981 !important;
     }
     .stSuccess * {
-        color: #065F46 !important;
+        color: #FFFFFF !important;
     }
 
     /* ============================================
@@ -552,6 +556,13 @@ st.markdown("""
        ============================================ */
     .stSpinner > div {
         border-color: #0066FF transparent transparent transparent !important;
+    }
+
+    /* ============================================
+       PLOTLY CHARTS - Dark theme
+       ============================================ */
+    .js-plotly-plot .plotly .bg {
+        fill: #1E293B !important;
     }
 </style>
 """, unsafe_allow_html=True)
