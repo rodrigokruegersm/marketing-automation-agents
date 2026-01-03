@@ -8,6 +8,8 @@ __pycache__/
 .env
 .env.local
 *.key
+secrets.toml
+.streamlit/secrets.toml
 
 # IDE
 .vscode/

@@ -1,165 +1,162 @@
-# Marketing Automation Agents
+# Adlytics - Intelligence for Scale
 
-Sistema de automação para agência de marketing digital usando Claude Code e MCPs.
+Sistema de automacao de marketing digital com agentes de IA.
 
-**Meta 2026:** $500k/mês | 80% margem | 6 clientes high-ticket
+**Meta 2026:** $500k/mes | 80% margem | 6 clientes high-ticket
 
 ---
 
 ## Estrutura do Projeto
 
 ```
-Marketing Automation Agents/
+Adlytics/
+├── dashboard/              # DASHBOARD PRINCIPAL (Streamlit)
+│   ├── app.py              # Aplicacao principal
+│   └── components/         # Componentes UI
 │
-├── 📁 _templates/              ← COPIE PARA CRIAR NOVO
-│   ├── client-template/        → Novo cliente
-│   └── agent-template/         → Novo agente
+├── core/                   # NUCLEO DO SISTEMA
+│   ├── adapters/           # Integracoes com APIs
+│   │   ├── meta_ads.py     # Meta Ads API
+│   │   ├── hyros.py        # Hyros Attribution
+│   │   └── checkout/       # Plataformas de checkout
+│   │       ├── whop.py
+│   │       ├── clickfunnels.py
+│   │       ├── hotmart.py
+│   │       ├── kiwify.py
+│   │       └── stripe.py
+│   ├── campaign_parser.py  # Parser de campanhas {TAG}
+│   ├── client_registry.py  # Registro de clientes
+│   ├── funnel_registry.py  # Registro de funis
+│   └── product_registry.py # Registro de produtos
 │
-├── 📁 agents/                  ← AGENTES DE IA
-│   ├── data-pulse/             → Análise de dados (/dados)
-│   ├── ad-launcher/            → Gestão de anúncios (/ads)
-│   ├── copy-forge/             → Criação de copies (/copy)
-│   └── command-center/         → Orquestrador (/status)
+├── agents/                 # AGENTES DE IA
+│   ├── command-center/     # Orquestrador principal
+│   ├── data-pulse/         # Analise de dados
+│   ├── ad-launcher/        # Gestao de anuncios
+│   ├── copy_forge/         # Geracao de copies
+│   ├── creative_lab/       # Criacao de criativos
+│   ├── audience_builder/   # Construcao de publicos
+│   └── performance_optimizer/  # Otimizacao de performance
 │
-├── 📁 mcps/                    ← INTEGRACÕES (APIs)
-│   ├── meta-ads/               → Facebook/Instagram Ads
-│   ├── gohighlevel/            → CRM GoHighLevel
-│   └── zapier/                 → Automações Zapier
+├── clients/                # CLIENTES
+│   └── brez-scales/        # Projeto piloto
+│       ├── config.yaml
+│       ├── products/       # Produtos do cliente
+│       ├── funnels/        # Funis configurados
+│       └── reports/        # Relatorios gerados
 │
-├── 📁 clients/                 ← CLIENTES
-│   └── brez-scales/            → Projeto piloto
+├── brand/                  # IDENTIDADE VISUAL
+│   └── BRAND_GUIDELINES.md # Cores, fontes, logo
 │
-├── 📁 docs/                    ← DOCUMENTAÇÃO
-│   ├── board/                  → Análises estratégicas
-│   ├── guides/                 → Guias de setup
-│   └── strategy/               → Prompt semente
+├── docs/                   # DOCUMENTACAO
+│   ├── architecture/       # Arquitetura do sistema
+│   ├── guides/             # Guias de setup
+│   └── session-history/    # Historico de sessoes
 │
-└── 📁 config/                  ← CONFIGURAÇÃO
-    └── claude-desktop.json     → Config do Claude Code
+├── mcps/                   # INTEGRACOES MCP
+│   ├── meta-ads/
+│   ├── google-sheets/
+│   ├── gohighlevel/
+│   └── zapier/
+│
+└── config/                 # CONFIGURACAO
+    └── claude-desktop.json
 ```
 
 ---
 
-## Quick Start
+## Dashboard
 
-### Criar Novo Cliente
-```bash
-cp -r _templates/client-template clients/nome-cliente
-# Edite clients/nome-cliente/config.yaml
-```
+O dashboard Adlytics oferece:
+- Metricas em tempo real (ROAS, CPP, Revenue)
+- Analise por funil com tags {FUNNEL}
+- Integracao com Whop, ClickFunnels, Hyros
+- Sugestoes de IA para otimizacao
+- Controle de campanhas Meta Ads
 
-### Criar Novo Agente
-```bash
-cp -r _templates/agent-template agents/nome-agente
-# Edite o system-prompt.md
-```
-
-### Configurar Claude Code
-```bash
-# Copie config/claude-desktop.json para:
-# ~/.claude/claude_desktop_config.json
-# Preencha as credenciais
-```
-
----
-
-## Agentes Disponíveis
-
-| Agente | Comando | Função | Status |
-|--------|---------|--------|--------|
-| **Data Pulse** | `/dados` | Análise de métricas | 🟢 Pronto |
-| **Ad Launcher** | `/ads` | Criar/gerenciar campanhas | 🟢 Pronto |
-| **Copy Forge** | `/copy` | Gerar variações de copy | 🟡 Template |
-| **Command Center** | `/status` | Orquestrar agentes | 🟢 Pronto |
-
----
-
-## MCPs (Integrações)
-
-| MCP | Plataforma | Status |
-|-----|------------|--------|
-| `meta-ads` | Facebook/Instagram Ads | 🟢 Pronto |
-| `gohighlevel` | GoHighLevel CRM | 🟢 Pronto |
-| `zapier` | Zapier Automations | 🟢 Pronto |
-
----
-
-## Clientes
-
-| Cliente | Status | Stack |
-|---------|--------|-------|
-| **Brez Scales** | 🟢 Piloto | Meta, Google, GHL, Zapier, Whop |
-
----
-
-## Documentação
-
-| Doc | Descrição |
-|-----|-----------|
-| [Setup Guide](docs/guides/SETUP_GUIDE.md) | Como configurar tudo |
-| [Token Meta](docs/guides/GUIA_TOKEN_META_ADS.md) | Criar token Meta Ads |
-| [Prompt Semente](docs/strategy/PROMPT_SEMENTE.md) | Base estratégica |
-| [Board Docs](docs/board/) | Análises do board |
-
----
-
-## Sistema de Automacao (ATIVO)
-
-O sistema roda automaticamente via GitHub Actions:
-
-| Schedule | Horario | Acao |
-|----------|---------|------|
-| Daily Report | 9 AM BRT | Relatorio completo |
-| Hourly Check | 9AM-6PM | Verificacao de thresholds |
-| Weekly Summary | Segunda 10 AM | Resumo semanal |
-
-### Comandos Rapidos
+### Executar Dashboard
 
 ```bash
-# Ver dashboard
-cd clients/brez-scales/dashboards/streamlit && streamlit run app.py
-
-# Rodar automacao manual
-cd agents/command-center && python automation_engine.py --mode report
-
-# Ver status do workflow
-gh run list
+cd dashboard
+streamlit run app.py
 ```
 
-### Links
-
-- [GitHub Actions](https://github.com/rodrigokruegersm/marketing-automation-agents/actions)
-- [Documentacao Completa](docs/guides/MEDIA_BUYER_AUTOMATION.md)
-- [Historico de Sessoes](docs/session-history/)
+**URL Local:** http://localhost:8501
 
 ---
 
-## Resultados Atuais (Brez Scales)
+## Integracoes Suportadas
+
+| Plataforma | Tipo | Status |
+|------------|------|--------|
+| **Meta Ads** | Anuncios | Ativo |
+| **Hyros** | Atribuicao | Ativo |
+| **Whop** | Checkout | Ativo |
+| **ClickFunnels** | Checkout | Ativo |
+| **Hotmart** | Checkout | Pronto |
+| **Kiwify** | Checkout | Pronto |
+| **Stripe** | Checkout | Pronto |
+
+---
+
+## Agentes de IA
+
+| Agente | Funcao | Status |
+|--------|--------|--------|
+| **Command Center** | Orquestracao | Ativo |
+| **Data Pulse** | Analise de dados | Ativo |
+| **Ad Launcher** | Gestao de anuncios | Ativo |
+| **Copy Forge** | Geracao de copies | Ativo |
+| **Creative Lab** | Criativos | Em dev |
+| **Audience Builder** | Publicos | Em dev |
+| **Performance Optimizer** | Otimizacao | Em dev |
+
+---
+
+## Configuracao
+
+### Variaveis de Ambiente (.env)
+
+```env
+# Meta Ads
+META_ACCESS_TOKEN=seu_token
+META_AD_ACCOUNT_ID=act_xxxxx
+
+# Checkout
+WHOP_API_KEY=sua_chave
+CLICKFUNNELS_API_KEY=sua_chave
+
+# Atribuicao
+HYROS_API_KEY=sua_chave
+```
+
+### Streamlit Secrets
+
+Para deploy no Streamlit Cloud, configure os secrets em:
+`.streamlit/secrets.toml`
+
+---
+
+## Marca Adlytics
+
+- **Nome:** Adlytics (Ad + Analytics)
+- **Tagline:** Intelligence for Scale
+- **Cores:** Ocean Blue (#0066FF), Deep Navy (#0A1628)
+- **Fonte:** Inter
+
+Ver detalhes em [brand/BRAND_GUIDELINES.md](brand/BRAND_GUIDELINES.md)
+
+---
+
+## Resultados (Brez Scales)
 
 | KPI | Valor | Status |
 |-----|-------|--------|
 | ROAS | 2.50x | GOOD |
-| Revenue | $9,095.86 | - |
-| Spend | $3,644.83 | - |
-| Profit | $5,451.03 | GOOD |
-| Comissao (20%) | $1,090.21 | - |
+| Revenue | $9,095 | - |
+| Spend | $3,644 | - |
+| Profit | $5,451 | GOOD |
 
 ---
-
-## Proximos Passos
-
-- [x] Gerar token Meta Ads (Brez Scales)
-- [x] Testar MCP meta-ads
-- [x] Definir metricas do funil
-- [x] Criar planilha de tracking
-- [x] Primeiro Daily Pulse
-- [x] Configurar GitHub Actions
-- [ ] Adicionar mais clientes
-- [ ] Integrar Slack para alertas
-- [ ] Expandir para Google Ads
-
----
-
-**Contato:** Rodrigo (CMO) | Pierre (CEO)
 
 **Criado:** 2026-01-02 | **Atualizado:** 2026-01-03
