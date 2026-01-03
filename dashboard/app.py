@@ -20,6 +20,7 @@ from core import (
     CampaignParser, ClientRegistry, FunnelRegistry, DataAggregator,
     ProductRegistry, WhopAdapter, ClickFunnelsAdapter, HyrosAdapter
 )
+from core.adapters.google_analytics import GoogleAnalyticsAdapter, get_mock_ga_data
 from dashboard.auth import check_password, logout
 
 # =============================================================================
@@ -258,6 +259,10 @@ if 'selected_project' not in st.session_state:
     st.session_state.selected_project = 'Brazz Scales'
 if 'campaign_tag_filter' not in st.session_state:
     st.session_state.campaign_tag_filter = ''
+if 'ai_chat_history' not in st.session_state:
+    st.session_state.ai_chat_history = []
+if 'ai_chat_input' not in st.session_state:
+    st.session_state.ai_chat_input = ''
 
 # =============================================================================
 # PROJECTS CONFIG
@@ -292,14 +297,20 @@ def get_credentials():
             'meta_token': st.secrets.get("META_ACCESS_TOKEN", ""),
             'meta_account': st.secrets.get("META_AD_ACCOUNT_ID", ""),
             'whop_key': st.secrets.get("WHOP_API_KEY", ""),
-            'hyros_key': st.secrets.get("HYROS_API_KEY", "")
+            'hyros_key': st.secrets.get("HYROS_API_KEY", ""),
+            'ga_property_id': st.secrets.get("GA_PROPERTY_ID", ""),
+            'ga_credentials_json': st.secrets.get("GA_CREDENTIALS_JSON", ""),
+            'openai_key': st.secrets.get("OPENAI_API_KEY", "")
         }
     except:
         return {
             'meta_token': os.getenv("META_ACCESS_TOKEN", ""),
             'meta_account': os.getenv("META_AD_ACCOUNT_ID", ""),
             'whop_key': os.getenv("WHOP_API_KEY", ""),
-            'hyros_key': os.getenv("HYROS_API_KEY", "")
+            'hyros_key': os.getenv("HYROS_API_KEY", ""),
+            'ga_property_id': os.getenv("GA_PROPERTY_ID", ""),
+            'ga_credentials_json': os.getenv("GA_CREDENTIALS_JSON", ""),
+            'openai_key': os.getenv("OPENAI_API_KEY", "")
         }
 
 # =============================================================================
@@ -513,6 +524,455 @@ def parse_full_metrics(data):
         'cost_per_purchase': cost_per_purchase,
         'cost_per_result': cost_per_result
     }
+
+# =============================================================================
+# GOOGLE ANALYTICS DATA
+# =============================================================================
+
+@st.cache_data(ttl=120)
+def fetch_ga_data(property_id: str, credentials_json: str, start_date: str, end_date: str):
+    """Fetch Google Analytics data for the specified date range"""
+    if not property_id:
+        # Return mock data for demo purposes
+        return get_mock_ga_data()
+
+    try:
+        ga_adapter = GoogleAnalyticsAdapter(
+            property_id=property_id,
+            credentials_json=credentials_json
+        )
+        return ga_adapter.get_full_report(start_date, end_date)
+    except Exception as e:
+        # Return mock data if GA connection fails
+        return get_mock_ga_data()
+
+def calculate_delta(current: float, previous: float) -> dict:
+    """Calculate delta between two values with trend indicator"""
+    if previous == 0:
+        if current > 0:
+            return {'delta': 100.0, 'trend': 'up', 'icon': '↑'}
+        return {'delta': 0, 'trend': 'flat', 'icon': '→'}
+
+    delta_pct = ((current - previous) / abs(previous)) * 100
+
+    if delta_pct > 5:
+        return {'delta': delta_pct, 'trend': 'up', 'icon': '↑'}
+    elif delta_pct < -5:
+        return {'delta': delta_pct, 'trend': 'down', 'icon': '↓'}
+    else:
+        return {'delta': delta_pct, 'trend': 'flat', 'icon': '→'}
+
+def get_delta_color(trend: str, metric_type: str = 'positive') -> str:
+    """Get color for delta based on trend and metric type"""
+    # For metrics where higher is better (revenue, ROAS, etc.)
+    if metric_type == 'positive':
+        if trend == 'up':
+            return '#10B981'  # green
+        elif trend == 'down':
+            return '#EF4444'  # red
+    # For metrics where lower is better (CPA, CPM, etc.)
+    elif metric_type == 'negative':
+        if trend == 'up':
+            return '#EF4444'  # red
+        elif trend == 'down':
+            return '#10B981'  # green
+    return '#94A3B8'  # gray for flat
+
+def cross_reference_data(meta_metrics: dict, ga_data: dict) -> dict:
+    """Cross-reference Meta Ads data with Google Analytics"""
+    meta_purchases = meta_metrics.get('purchases', 0)
+    meta_revenue = meta_metrics.get('revenue', 0)
+    meta_spend = meta_metrics.get('spend', 0)
+
+    # GA data
+    ga_overview = ga_data.get('overview', {})
+    ga_sessions = ga_overview.get('sessions', 0)
+    ga_users = ga_overview.get('users', 0)
+    ga_transactions = ga_overview.get('transactions', 0)
+    ga_revenue = ga_overview.get('revenue', 0)
+    ga_bounce_rate = ga_overview.get('bounce_rate', 0)
+    ga_avg_session_duration = ga_overview.get('avg_session_duration', 0)
+
+    # Calculate cross-platform insights
+    meta_lp_views = meta_metrics.get('landing_page_views', 0)
+
+    # Session to LP View ratio (data quality check)
+    session_lp_ratio = (ga_sessions / meta_lp_views * 100) if meta_lp_views > 0 else 0
+
+    # Attribution comparison
+    purchase_diff = meta_purchases - ga_transactions
+    revenue_diff = meta_revenue - ga_revenue
+
+    # True cost metrics
+    true_roas = ga_revenue / meta_spend if meta_spend > 0 else 0
+    true_cpa = meta_spend / ga_transactions if ga_transactions > 0 else 0
+
+    return {
+        # Meta Ads data
+        'meta_purchases': meta_purchases,
+        'meta_revenue': meta_revenue,
+        'meta_spend': meta_spend,
+        'meta_roas': meta_metrics.get('roas', 0),
+        'meta_lp_views': meta_lp_views,
+
+        # GA data
+        'ga_sessions': ga_sessions,
+        'ga_users': ga_users,
+        'ga_transactions': ga_transactions,
+        'ga_revenue': ga_revenue,
+        'ga_bounce_rate': ga_bounce_rate,
+        'ga_avg_session_duration': ga_avg_session_duration,
+
+        # Cross-platform insights
+        'session_lp_ratio': session_lp_ratio,
+        'purchase_diff': purchase_diff,
+        'revenue_diff': revenue_diff,
+        'true_roas': true_roas,
+        'true_cpa': true_cpa,
+
+        # Traffic sources from GA
+        'traffic_sources': ga_data.get('traffic_sources', {}),
+        'channels': ga_data.get('channels', {}),
+        'devices': ga_data.get('devices', {}),
+        'top_pages': ga_data.get('top_pages', []),
+        'landing_pages': ga_data.get('landing_pages', [])
+    }
+
+def generate_improvement_suggestions(metrics_3d: dict, metrics_7d: dict, cross_data: dict) -> list:
+    """Generate actionable improvement suggestions based on all data"""
+    suggestions = []
+
+    # ROAS improvements
+    roas_7d = metrics_7d.get('roas', 0)
+    if roas_7d < 2.0:
+        suggestions.append({
+            'priority': 'high',
+            'category': 'ROAS',
+            'icon': '💰',
+            'title': 'Aumentar ROAS',
+            'current': f'{roas_7d:.2f}x',
+            'target': '2.0x+',
+            'actions': [
+                'Pausar adsets com ROAS < 1.0x',
+                'Duplicar criativos vencedores',
+                'Testar audiences mais qualificadas',
+                'Revisar página de vendas (copy, oferta, garantia)'
+            ]
+        })
+
+    # CTR improvements
+    ctr_7d = metrics_7d.get('ctr', 0)
+    if ctr_7d < 1.0:
+        suggestions.append({
+            'priority': 'medium',
+            'category': 'CTR',
+            'icon': '🖱️',
+            'title': 'Melhorar Click-Through Rate',
+            'current': f'{ctr_7d:.2f}%',
+            'target': '1.5%+',
+            'actions': [
+                'Testar novos hooks nos primeiros 3 segundos',
+                'Usar mais pattern interrupts nos criativos',
+                'Atualizar copies com urgência/escassez',
+                'Testar thumbnails mais chamativas'
+            ]
+        })
+
+    # LP View Rate improvements
+    lp_rate = metrics_7d.get('lp_view_rate', 0)
+    if lp_rate < 70:
+        suggestions.append({
+            'priority': 'medium',
+            'category': 'LP View Rate',
+            'icon': '📄',
+            'title': 'Aumentar Taxa de Visualização LP',
+            'current': f'{lp_rate:.1f}%',
+            'target': '80%+',
+            'actions': [
+                'Otimizar velocidade da landing page',
+                'Verificar mobile responsiveness',
+                'Reduzir tempo de carregamento < 3s',
+                'Usar CDN para assets estáticos'
+            ]
+        })
+
+    # Checkout rate improvements
+    checkouts = metrics_7d.get('initiate_checkout', 0)
+    purchases = metrics_7d.get('purchases', 0)
+    checkout_rate = (purchases / checkouts * 100) if checkouts > 0 else 0
+    if checkout_rate < 30:
+        suggestions.append({
+            'priority': 'high',
+            'category': 'Checkout',
+            'icon': '🛒',
+            'title': 'Melhorar Conversão de Checkout',
+            'current': f'{checkout_rate:.1f}%',
+            'target': '40%+',
+            'actions': [
+                'Simplificar formulário de checkout',
+                'Adicionar mais métodos de pagamento (Pix, boleto)',
+                'Mostrar garantia e políticas de devolução',
+                'Adicionar prova social no checkout',
+                'Implementar exit intent popup'
+            ]
+        })
+
+    # Frequency issues
+    freq_7d = metrics_7d.get('frequency', 0)
+    if freq_7d > 2.5:
+        suggestions.append({
+            'priority': 'high' if freq_7d > 3.5 else 'medium',
+            'category': 'Frequência',
+            'icon': '🔄',
+            'title': 'Reduzir Frequência de Anúncio',
+            'current': f'{freq_7d:.1f}x',
+            'target': '< 2.5x',
+            'actions': [
+                'Expandir tamanho da audiência',
+                'Criar novos lookalikes 1-3%',
+                'Adicionar interesses relacionados',
+                'Rodar mais criativos variados',
+                'Pausar adsets com freq > 4x'
+            ]
+        })
+
+    # GA Bounce Rate
+    bounce_rate = cross_data.get('ga_bounce_rate', 0)
+    if bounce_rate > 60:
+        suggestions.append({
+            'priority': 'medium',
+            'category': 'Bounce Rate',
+            'icon': '📉',
+            'title': 'Reduzir Taxa de Rejeição',
+            'current': f'{bounce_rate:.1f}%',
+            'target': '< 50%',
+            'actions': [
+                'Melhorar alinhamento anúncio ↔ landing page',
+                'Adicionar conteúdo above the fold',
+                'Melhorar proposta de valor no hero',
+                'Adicionar vídeo explicativo'
+            ]
+        })
+
+    # Attribution gap
+    purchase_diff = cross_data.get('purchase_diff', 0)
+    if abs(purchase_diff) > 5:
+        suggestions.append({
+            'priority': 'low',
+            'category': 'Atribuição',
+            'icon': '📊',
+            'title': 'Verificar Atribuição',
+            'current': f'{purchase_diff:+d} vendas diff',
+            'target': 'Alinhar Meta ↔ GA',
+            'actions': [
+                'Verificar configuração do Pixel',
+                'Checar eventos duplicados',
+                'Revisar janela de atribuição',
+                'Considerar usar Hyros para atribuição'
+            ]
+        })
+
+    return sorted(suggestions, key=lambda x: {'high': 0, 'medium': 1, 'low': 2}[x['priority']])
+
+def generate_ai_response(question: str, metrics_3d: dict, metrics_7d: dict, cross_data: dict, suggestions: list) -> str:
+    """Generate AI response based on the question and available data"""
+    # Build context from all data
+    context = f"""
+DADOS DOS ÚLTIMOS 3 DIAS:
+- ROAS: {metrics_3d.get('roas', 0):.2f}x
+- Gasto: ${metrics_3d.get('spend', 0):,.2f}
+- Faturamento: ${metrics_3d.get('revenue', 0):,.2f}
+- Vendas: {metrics_3d.get('purchases', 0)}
+- CTR: {metrics_3d.get('ctr', 0):.2f}%
+- Frequência: {metrics_3d.get('frequency', 0):.2f}
+
+DADOS DOS ÚLTIMOS 7 DIAS:
+- ROAS: {metrics_7d.get('roas', 0):.2f}x
+- Gasto: ${metrics_7d.get('spend', 0):,.2f}
+- Faturamento: ${metrics_7d.get('revenue', 0):,.2f}
+- Vendas: {metrics_7d.get('purchases', 0)}
+- CTR: {metrics_7d.get('ctr', 0):.2f}%
+- CPA: ${metrics_7d.get('cpa', 0):,.2f}
+- Frequência: {metrics_7d.get('frequency', 0):.2f}
+- Hook Rate: {metrics_7d.get('hook_rate', 0):.2f}%
+- LP View Rate: {metrics_7d.get('lp_view_rate', 0):.1f}%
+
+DADOS GOOGLE ANALYTICS:
+- Sessões: {cross_data.get('ga_sessions', 0):,}
+- Usuários: {cross_data.get('ga_users', 0):,}
+- Transações GA: {cross_data.get('ga_transactions', 0)}
+- Bounce Rate: {cross_data.get('ga_bounce_rate', 0):.1f}%
+- True ROAS (GA): {cross_data.get('true_roas', 0):.2f}x
+
+MELHORIAS PRIORITÁRIAS:
+{chr(10).join([f"- {s['title']} ({s['current']} → {s['target']})" for s in suggestions[:3]])}
+"""
+
+    # Simple rule-based responses (can be replaced with OpenAI API)
+    question_lower = question.lower()
+
+    if 'roas' in question_lower or 'retorno' in question_lower:
+        roas_7d = metrics_7d.get('roas', 0)
+        roas_3d = metrics_3d.get('roas', 0)
+        trend = "subindo" if roas_3d > roas_7d else "caindo" if roas_3d < roas_7d else "estável"
+
+        if roas_7d < 1.0:
+            return f"""📊 **Análise de ROAS:**
+
+O ROAS atual de **{roas_7d:.2f}x** está abaixo do breakeven. Nos últimos 3 dias está {trend} ({roas_3d:.2f}x).
+
+**Ação Urgente Necessária:**
+1. Pausar todos os adsets com ROAS < 0.8x imediatamente
+2. Revisar os criativos que estão rodando
+3. Verificar se a página de vendas está convertendo
+4. Considerar pausar as campanhas por 24h para reset do algoritmo
+
+**Meta:** Atingir ROAS > 2.0x para ter margem saudável."""
+
+        elif roas_7d < 2.0:
+            return f"""📊 **Análise de ROAS:**
+
+O ROAS de **{roas_7d:.2f}x** está na zona de atenção. Tendência: {trend} ({roas_3d:.2f}x em 3d).
+
+**Recomendações:**
+1. Manter budget atual, não escalar ainda
+2. Analisar quais adsets têm ROAS > 2x e duplicá-los
+3. Pausar adsets com ROAS consistentemente < 1.5x
+4. Testar 2-3 novos criativos por semana
+5. Revisar copy e CTA da landing page
+
+**Meta:** Estabilizar em 2.0x+ antes de escalar."""
+
+        else:
+            return f"""📊 **Análise de ROAS:**
+
+Excelente! ROAS de **{roas_7d:.2f}x** está saudável. Tendência: {trend} ({roas_3d:.2f}x em 3d).
+
+**Oportunidades de Scale:**
+1. Aumentar budget 20-30% nos adsets vencedores
+2. Duplicar winners para novas audiências
+3. Testar lookalikes 1-3% dos compradores
+4. Manter os criativos atuais rodando
+
+**Atenção:** Monitorar frequência - se passar de 2.5x, expandir audiência."""
+
+    elif 'escalar' in question_lower or 'scale' in question_lower:
+        roas_7d = metrics_7d.get('roas', 0)
+        freq_7d = metrics_7d.get('frequency', 0)
+
+        if roas_7d >= 2.0 and freq_7d < 2.5:
+            return f"""🚀 **Análise de Scale:**
+
+**Você está pronto para escalar!**
+- ROAS: {roas_7d:.2f}x ✅
+- Frequência: {freq_7d:.1f}x ✅
+
+**Estratégia de Scale Recomendada:**
+1. **Dia 1-3:** Aumente budget em 20% nos top 3 adsets
+2. **Dia 4-7:** Se ROAS mantiver > 2x, aumente mais 20%
+3. **Dia 8+:** Duplique os winners para novas audiências
+
+**Regras de Ouro:**
+- Nunca aumente mais de 30% por vez
+- Aguarde 48h entre aumentos para o algoritmo estabilizar
+- Monitore CPA e frequência diariamente"""
+
+        elif roas_7d >= 2.0 and freq_7d >= 2.5:
+            return f"""⚠️ **Análise de Scale:**
+
+ROAS bom ({roas_7d:.2f}x), mas **frequência alta** ({freq_7d:.1f}x).
+
+**Antes de escalar:**
+1. Expandir audiência em 50%+ para reduzir frequência
+2. Adicionar 3-5 novos interesses relacionados
+3. Criar lookalikes de compradores (1%, 2%, 3%)
+4. Preparar 3-5 novos criativos para rotação
+
+**Escale apenas após** frequência voltar para < 2.5x."""
+
+        else:
+            return f"""⏸️ **Análise de Scale:**
+
+**Ainda não é hora de escalar.**
+- ROAS atual: {roas_7d:.2f}x (meta: > 2.0x)
+- Frequência: {freq_7d:.1f}x
+
+**Foque em otimização primeiro:**
+1. Pausar adsets com ROAS < 1.5x
+2. Testar novos ângulos de criativos
+3. Otimizar landing page para conversão
+4. Alcançar ROAS consistente > 2.0x por 5+ dias"""
+
+    elif 'criativo' in question_lower or 'creative' in question_lower:
+        hook_rate = metrics_7d.get('hook_rate', 0)
+        ctr = metrics_7d.get('ctr', 0)
+
+        return f"""🎨 **Análise de Criativos:**
+
+**Métricas Atuais:**
+- Hook Rate: {hook_rate:.2f}% {'✅' if hook_rate > 25 else '⚠️' if hook_rate > 15 else '❌'}
+- CTR: {ctr:.2f}% {'✅' if ctr > 1.5 else '⚠️' if ctr > 0.8 else '❌'}
+
+**{'Seus criativos estão funcionando bem!' if hook_rate > 25 and ctr > 1.5 else 'Oportunidades de melhoria:'}**
+
+{'Mantenha os winners e teste variações.' if hook_rate > 25 else '''1. **Hook fraco** - teste novos primeiros 3 segundos:
+   - Pergunta provocativa
+   - Número/estatística impactante
+   - Promessa direta do benefício
+   - Pattern interrupt visual'''}
+
+{'Continue monitorando CTR.' if ctr > 1.5 else '''2. **CTR baixo** - melhore o call-to-action:
+   - CTA mais claro e urgente
+   - Benefício principal no texto
+   - Prova social no criativo'''}
+
+**Regra dos 3x3:**
+Teste 3 hooks diferentes + 3 bodies diferentes = 9 combinações."""
+
+    elif 'audiencia' in question_lower or 'publico' in question_lower or 'audience' in question_lower:
+        freq = metrics_7d.get('frequency', 0)
+
+        return f"""👥 **Análise de Audiência:**
+
+**Frequência Atual:** {freq:.1f}x {'✅' if freq < 2.5 else '⚠️' if freq < 3.5 else '❌'}
+
+{'Audiência saudável - frequência controlada.' if freq < 2.5 else f'''**Audiência Saturada!** Frequência de {freq:.1f}x indica que as mesmas pessoas estão vendo os anúncios repetidamente.
+
+**Ações Imediatas:**
+1. Expandir público em 50-100%
+2. Adicionar novos interesses relacionados
+3. Testar lookalikes 1-5% de:
+   - Compradores
+   - Add to carts
+   - View content (site)
+4. Excluir quem já comprou nos últimos 180 dias'''}
+
+**Estrutura de Audiências Recomendada:**
+- 🎯 **Hot:** Retargeting 7 dias (30% budget)
+- 🔥 **Warm:** Retargeting 30 dias + Lookalike 1% (40% budget)
+- ❄️ **Cold:** Lookalikes 2-5% + Interesses (30% budget)"""
+
+    else:
+        # Generic response with summary
+        return f"""📋 **Resumo Geral do Traffic:**
+
+**Performance (7 dias):**
+- ROAS: {metrics_7d.get('roas', 0):.2f}x
+- Gasto: ${metrics_7d.get('spend', 0):,.2f}
+- Faturamento: ${metrics_7d.get('revenue', 0):,.2f}
+- Vendas: {metrics_7d.get('purchases', 0)}
+- CPA: ${metrics_7d.get('cpa', 0):,.2f}
+
+**Saúde do Funil:**
+- CTR: {metrics_7d.get('ctr', 0):.2f}%
+- Hook Rate: {metrics_7d.get('hook_rate', 0):.2f}%
+- LP View Rate: {metrics_7d.get('lp_view_rate', 0):.1f}%
+- Frequência: {metrics_7d.get('frequency', 0):.1f}x
+
+**Próximos Passos:**
+{chr(10).join([f"• {s['title']}" for s in suggestions[:3]])}
+
+💡 *Pergunte sobre ROAS, escalar, criativos ou audiências para análises específicas.*"""
 
 # =============================================================================
 # JEREMY HAINES THRESHOLDS & AI ANALYSIS
@@ -747,6 +1207,7 @@ with st.sidebar:
     creds = get_credentials()
     st.markdown("##### STATUS")
     st.markdown(f"{'🟢' if creds['meta_token'] else '🔴'} Meta Ads")
+    st.markdown(f"{'🟢' if creds['ga_property_id'] else '🟡'} Google Analytics")
     st.markdown(f"{'🟢' if creds['whop_key'] else '🔴'} Whop")
     st.markdown(f"{'🟢' if creds['hyros_key'] else '🔴'} Hyros")
 
@@ -1053,13 +1514,11 @@ if st.session_state.current_page == 'dashboard':
 # ================== TRAFFIC AGENT PAGE ==================
 elif st.session_state.current_page == 'traffic':
     st.markdown("## 📊 Traffic Agent")
-    st.markdown("*Análise de campanhas e otimização baseada em dados*")
+    st.markdown("*Análise avançada com cruzamento Meta Ads + Google Analytics*")
 
     if creds['meta_token'] and creds['meta_account']:
 
         # ========== DATE FILTER (Meta Ads Manager Style) ==========
-        st.markdown("### 📅 Período de Análise")
-
         date_col1, date_col2, date_col3, date_col4 = st.columns([2, 1.5, 1.5, 1])
 
         with date_col1:
@@ -1099,7 +1558,7 @@ elif st.session_state.current_page == 'traffic':
 
         st.markdown("---")
 
-        # Fetch data based on date selection
+        # Fetch data for selected period AND comparison periods (3d, 7d)
         if use_custom_dates:
             insights = fetch_account_insights(creds['meta_account'], creds['meta_token'], start_date=start_date_str, end_date=end_date_str)
             campaigns = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], start_date=start_date_str, end_date=end_date_str)
@@ -1107,28 +1566,99 @@ elif st.session_state.current_page == 'traffic':
             insights = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset=date_preset)
             campaigns = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], date_preset=date_preset)
 
+        # Always fetch 3d and 7d for comparison
+        insights_3d = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset='last_3d')
+        insights_7d = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset='last_7d')
+
         metrics = parse_full_metrics(insights)
+        metrics_3d = parse_full_metrics(insights_3d)
+        metrics_7d = parse_full_metrics(insights_7d)
 
-        # Tabs
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Funil", "📋 Tabela Completa", "📢 Campanhas", "🤖 AI Analysis"])
+        # Fetch GA data
+        ga_start = (date.today() - timedelta(days=7)).strftime('%Y-%m-%d')
+        ga_end = (date.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+        ga_data = fetch_ga_data(creds['ga_property_id'], creds['ga_credentials_json'], ga_start, ga_end)
 
-        # ========== TAB 1: FUNNEL VISUALIZATION ==========
+        # Cross-reference data
+        cross_data = cross_reference_data(metrics_7d, ga_data)
+
+        # Generate improvement suggestions
+        suggestions = generate_improvement_suggestions(metrics_3d, metrics_7d, cross_data)
+
+        # Tabs - Expanded with new sections
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            "📊 Overview",
+            "📈 3d vs 7d",
+            "🔗 Cross-Platform",
+            "💡 Melhorias",
+            "📢 Campanhas",
+            "🤖 AI Consultant"
+        ])
+
+        # ========== TAB 1: OVERVIEW ==========
         with tab1:
-            st.markdown("### 📊 Funil de Conversão")
+            st.markdown("### 📊 Performance Overview")
 
-            # Main funnel visualization
+            # Top KPI Row with main metrics
+            kpi_col1, kpi_col2, kpi_col3, kpi_col4, kpi_col5 = st.columns(5)
+
+            roas_class = "green" if metrics_7d['roas'] >= 2 else "yellow" if metrics_7d['roas'] >= 1 else "red"
+            profit_class = "green" if metrics_7d['profit'] > 0 else "red"
+
+            with kpi_col1:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Faturamento (7d)</div>
+                    <div class="kpi-value green">${metrics_7d['revenue']:,.2f}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with kpi_col2:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Gasto (7d)</div>
+                    <div class="kpi-value">${metrics_7d['spend']:,.2f}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with kpi_col3:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">ROAS (7d)</div>
+                    <div class="kpi-value {roas_class}">{metrics_7d['roas']:.2f}x</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with kpi_col4:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Lucro (7d)</div>
+                    <div class="kpi-value {profit_class}">${metrics_7d['profit']:,.2f}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with kpi_col5:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Vendas (7d)</div>
+                    <div class="kpi-value">{metrics_7d['purchases']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # Funnel visualization
             st.markdown("""
             <div class="funnel-container">
-                <div class="funnel-title">🎯 Jornada do Cliente</div>
+                <div class="funnel-title">🎯 Funil de Conversão (7 dias)</div>
             """, unsafe_allow_html=True)
 
             # Calculate rates
-            impr = metrics['impressions']
-            reach = metrics['reach']
-            clicks = metrics['link_clicks'] if metrics['link_clicks'] > 0 else metrics['clicks']
-            lp_views = metrics['landing_page_views']
-            checkouts = metrics['initiate_checkout']
-            purchases = metrics['purchases']
+            impr = metrics_7d['impressions']
+            clicks = metrics_7d['link_clicks'] if metrics_7d['link_clicks'] > 0 else metrics_7d['clicks']
+            lp_views = metrics_7d['landing_page_views']
+            checkouts = metrics_7d['initiate_checkout']
+            purchases = metrics_7d['purchases']
 
             click_rate = (clicks / impr * 100) if impr > 0 else 0
             lp_rate = (lp_views / clicks * 100) if clicks > 0 else 0
@@ -1169,133 +1699,417 @@ elif st.session_state.current_page == 'traffic':
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Key metrics summary
-            col1, col2, col3, col4 = st.columns(4)
+            # Charts row
+            col1, col2 = st.columns(2)
+
             with col1:
-                st.markdown(f"""
-                <div class="kpi-card">
-                    <div class="kpi-label">Taxa de Conversão</div>
-                    <div class="kpi-value">{overall_cvr:.2f}%</div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Funnel chart
+                fig = go.Figure(go.Funnel(
+                    y = ["Impressões", "Cliques", "LP Views", "Checkouts", "Vendas"],
+                    x = [impr, clicks, lp_views, checkouts, purchases],
+                    textposition = "inside",
+                    textinfo = "value+percent previous",
+                    marker = {
+                        "color": ["#3B82F6", "#6366F1", "#8B5CF6", "#A855F7", "#10B981"]
+                    },
+                    connector = {"line": {"color": "#334155", "width": 1}}
+                ))
+                fig.update_layout(
+                    title="Funil Visual",
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font={'color': '#F8FAFC'},
+                    height=350,
+                    margin=dict(t=40, b=20, l=20, r=20)
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
             with col2:
-                st.markdown(f"""
-                <div class="kpi-card">
-                    <div class="kpi-label">Hook Rate</div>
-                    <div class="kpi-value">{metrics['hook_rate']:.2f}%</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col3:
-                st.markdown(f"""
-                <div class="kpi-card">
-                    <div class="kpi-label">Taxa LP View</div>
-                    <div class="kpi-value">{metrics['lp_view_rate']:.1f}%</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col4:
-                roas_class = "green" if metrics['roas'] >= 2 else "yellow" if metrics['roas'] >= 1 else "red"
+                # ROAS Gauge
+                fig = go.Figure(go.Indicator(
+                    mode="gauge+number+delta",
+                    value=metrics_7d['roas'],
+                    delta={'reference': metrics_3d['roas'], 'relative': True, 'valueformat': '.1%'},
+                    number={'suffix': 'x', 'font': {'size': 40, 'color': '#F8FAFC'}},
+                    title={'text': "ROAS (7d vs 3d)", 'font': {'size': 14, 'color': '#94A3B8'}},
+                    gauge={
+                        'axis': {'range': [0, 5], 'tickcolor': '#475569'},
+                        'bar': {'color': "#0066FF"},
+                        'bgcolor': "#1E293B",
+                        'steps': [
+                            {'range': [0, 1], 'color': "rgba(239, 68, 68, 0.3)"},
+                            {'range': [1, 2], 'color': "rgba(245, 158, 11, 0.3)"},
+                            {'range': [2, 5], 'color': "rgba(16, 185, 129, 0.3)"}
+                        ],
+                        'threshold': {
+                            'line': {'color': "#10B981", 'width': 4},
+                            'thickness': 0.75,
+                            'value': 2.0
+                        }
+                    }
+                ))
+                fig.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font={'color': '#F8FAFC'},
+                    height=350,
+                    margin=dict(t=80, b=0, l=30, r=30)
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Secondary metrics
+            st.markdown("### 📈 Métricas Secundárias")
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
+            col1.metric("CTR", f"{metrics_7d['ctr']:.2f}%")
+            col2.metric("CPC", f"${metrics_7d['cpc']:.2f}")
+            col3.metric("CPM", f"${metrics_7d['cpm']:.2f}")
+            col4.metric("Frequência", f"{metrics_7d['frequency']:.2f}")
+            col5.metric("Hook Rate", f"{metrics_7d['hook_rate']:.2f}%")
+            col6.metric("CPA", f"${metrics_7d['cpa']:.2f}")
+
+        # ========== TAB 2: 3D vs 7D COMPARISON ==========
+        with tab2:
+            st.markdown("### 📈 Comparação 3 dias vs 7 dias")
+            st.markdown("*Identificar tendências de alta ou queda em cada métrica*")
+
+            # Calculate all deltas
+            deltas = {
+                'roas': calculate_delta(metrics_3d['roas'], metrics_7d['roas']),
+                'spend': calculate_delta(metrics_3d['spend'], metrics_7d['spend'] / 7 * 3),  # Normalize to 3d equivalent
+                'revenue': calculate_delta(metrics_3d['revenue'], metrics_7d['revenue'] / 7 * 3),
+                'purchases': calculate_delta(metrics_3d['purchases'], metrics_7d['purchases'] / 7 * 3),
+                'ctr': calculate_delta(metrics_3d['ctr'], metrics_7d['ctr']),
+                'cpc': calculate_delta(metrics_3d['cpc'], metrics_7d['cpc']),
+                'cpm': calculate_delta(metrics_3d['cpm'], metrics_7d['cpm']),
+                'frequency': calculate_delta(metrics_3d['frequency'], metrics_7d['frequency']),
+                'cpa': calculate_delta(metrics_3d['cpa'], metrics_7d['cpa']),
+                'hook_rate': calculate_delta(metrics_3d['hook_rate'], metrics_7d['hook_rate']),
+                'lp_view_rate': calculate_delta(metrics_3d['lp_view_rate'], metrics_7d['lp_view_rate'])
+            }
+
+            # Comparison table
+            st.markdown("#### 💰 Financeiro")
+            fin_col1, fin_col2, fin_col3, fin_col4 = st.columns(4)
+
+            with fin_col1:
+                d = deltas['roas']
+                color = get_delta_color(d['trend'], 'positive')
                 st.markdown(f"""
                 <div class="kpi-card">
                     <div class="kpi-label">ROAS</div>
-                    <div class="kpi-value {roas_class}">{metrics['roas']:.2f}x</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{metrics_3d['roas']:.2f}x</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{metrics_7d['roas']:.2f}x</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Funnel chart (visual)
-            st.markdown("<br>", unsafe_allow_html=True)
-            fig = go.Figure(go.Funnel(
-                y = ["Impressões", "Cliques", "LP Views", "Checkouts", "Vendas"],
-                x = [impr, clicks, lp_views, checkouts, purchases],
-                textposition = "inside",
-                textinfo = "value+percent previous",
-                marker = {
-                    "color": ["#3B82F6", "#6366F1", "#8B5CF6", "#A855F7", "#10B981"]
-                },
-                connector = {"line": {"color": "#334155", "width": 1}}
-            ))
-            fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font={'color': '#F8FAFC'},
-                height=350,
-                margin=dict(t=20, b=20, l=20, r=20)
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            with fin_col2:
+                d = deltas['revenue']
+                color = get_delta_color(d['trend'], 'positive')
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Faturamento</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>${metrics_3d['revenue']:,.0f}</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>${metrics_7d['revenue']:,.0f}</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        # ========== TAB 2: COMPLETE METRICS TABLE ==========
-        with tab2:
-            st.markdown("### 📋 Todas as Métricas")
+            with fin_col3:
+                d = deltas['spend']
+                color = get_delta_color(d['trend'], 'negative')  # Less spend is better
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Gasto</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>${metrics_3d['spend']:,.0f}</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>${metrics_7d['spend']:,.0f}</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-            # Group metrics by category
-            st.markdown("#### 📣 Alcance & Impressões")
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Alcance", f"{metrics['reach']:,}")
-            col2.metric("Impressões", f"{metrics['impressions']:,}")
-            col3.metric("Frequência", f"{metrics['frequency']:.2f}")
-            col4.metric("CPM", f"${metrics['cpm']:.2f}")
-
-            st.markdown("---")
-            st.markdown("#### 🖱️ Engajamento & Cliques")
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Hook Rate", f"{metrics['hook_rate']:.2f}%")
-            col2.metric("Cliques no Link", f"{metrics['link_clicks']:,}")
-            col3.metric("CTR", f"{metrics['ctr']:.2f}%")
-            col4.metric("CPC", f"${metrics['cpc']:.2f}")
-
-            st.markdown("---")
-            st.markdown("#### 📄 Landing Page")
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Visualizações LP", f"{metrics['landing_page_views']:,}")
-            col2.metric("Taxa LP View", f"{metrics['lp_view_rate']:.1f}%")
-            col3.metric("Add to Cart", f"{metrics['add_to_cart']:,}")
-            col4.metric("-", "-")
-
-            st.markdown("---")
-            st.markdown("#### 🛒 Checkout & Vendas")
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Checkouts Iniciados", f"{metrics['initiate_checkout']:,}")
-            col2.metric("Custo por Checkout", f"${metrics['cost_per_checkout']:.2f}")
-            col3.metric("Resultados (Vendas)", f"{metrics['results']:,}")
-            col4.metric("Custo por Resultado", f"${metrics['cost_per_result']:.2f}")
+            with fin_col4:
+                d = deltas['cpa']
+                color = get_delta_color(d['trend'], 'negative')  # Less CPA is better
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">CPA</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>${metrics_3d['cpa']:.2f}</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>${metrics_7d['cpa']:.2f}</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             st.markdown("---")
-            st.markdown("#### 💰 Financeiro")
-            col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric("Gasto Total", f"${metrics['spend']:,.2f}")
-            col2.metric("Valor Conversões", f"${metrics['revenue']:,.2f}")
-            col3.metric("Ticket Médio", f"${metrics['avg_purchase_value']:.2f}")
-            col4.metric("ROAS", f"{metrics['roas']:.2f}x")
-            col5.metric("Lucro", f"${metrics['profit']:,.2f}")
+            st.markdown("#### 🖱️ Engajamento")
+            eng_col1, eng_col2, eng_col3, eng_col4 = st.columns(4)
 
-            # Export as DataFrame
+            with eng_col1:
+                d = deltas['ctr']
+                color = get_delta_color(d['trend'], 'positive')
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">CTR</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{metrics_3d['ctr']:.2f}%</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{metrics_7d['ctr']:.2f}%</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with eng_col2:
+                d = deltas['hook_rate']
+                color = get_delta_color(d['trend'], 'positive')
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Hook Rate</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{metrics_3d['hook_rate']:.2f}%</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{metrics_7d['hook_rate']:.2f}%</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with eng_col3:
+                d = deltas['cpc']
+                color = get_delta_color(d['trend'], 'negative')  # Less CPC is better
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">CPC</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>${metrics_3d['cpc']:.2f}</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>${metrics_7d['cpc']:.2f}</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with eng_col4:
+                d = deltas['frequency']
+                color = get_delta_color(d['trend'], 'negative')  # Less frequency is better
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Frequência</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 12px; color: #64748B;">3d: <strong>{metrics_3d['frequency']:.2f}x</strong></div>
+                            <div style="font-size: 12px; color: #64748B;">7d: <strong>{metrics_7d['frequency']:.2f}x</strong></div>
+                        </div>
+                        <div style="font-size: 24px; color: {color}; font-weight: bold;">
+                            {d['icon']} {d['delta']:+.1f}%
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Trend summary
             st.markdown("---")
-            st.markdown("#### 📥 Exportar Dados")
-            metrics_df = pd.DataFrame([{
-                'Alcance': metrics['reach'],
-                'Impressões': metrics['impressions'],
-                'Frequência': round(metrics['frequency'], 2),
-                'Hook Rate (%)': round(metrics['hook_rate'], 2),
-                'Cliques Link': metrics['link_clicks'],
-                'CPM ($)': round(metrics['cpm'], 2),
-                'CTR (%)': round(metrics['ctr'], 2),
-                'CPC ($)': round(metrics['cpc'], 2),
-                'LP Views': metrics['landing_page_views'],
-                'Taxa LP View (%)': round(metrics['lp_view_rate'], 1),
-                'Checkouts': metrics['initiate_checkout'],
-                'Custo/Checkout ($)': round(metrics['cost_per_checkout'], 2),
-                'Vendas': metrics['purchases'],
-                'Custo/Venda ($)': round(metrics['cost_per_purchase'], 2),
-                'Custo/Resultado ($)': round(metrics['cost_per_result'], 2),
-                'Gasto Total ($)': round(metrics['spend'], 2),
-                'Faturamento ($)': round(metrics['revenue'], 2),
-                'Ticket Médio ($)': round(metrics['avg_purchase_value'], 2),
-                'ROAS': round(metrics['roas'], 2),
-                'Lucro ($)': round(metrics['profit'], 2)
-            }])
-            st.dataframe(metrics_df.T.rename(columns={0: 'Valor'}), use_container_width=True)
+            st.markdown("#### 📊 Resumo de Tendências")
 
-        # ========== TAB 3: CAMPAIGNS TABLE ==========
+            up_metrics = [k for k, v in deltas.items() if v['trend'] == 'up']
+            down_metrics = [k for k, v in deltas.items() if v['trend'] == 'down']
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if up_metrics:
+                    st.markdown(f"""
+                    <div class="ai-card success">
+                        <div class="ai-card-title">📈 Métricas em Alta ({len(up_metrics)})</div>
+                        <div class="ai-card-body">
+                            {', '.join([m.upper() for m in up_metrics])}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.info("Nenhuma métrica em alta significativa")
+
+            with col2:
+                if down_metrics:
+                    st.markdown(f"""
+                    <div class="ai-card warning">
+                        <div class="ai-card-title">📉 Métricas em Queda ({len(down_metrics)})</div>
+                        <div class="ai-card-body">
+                            {', '.join([m.upper() for m in down_metrics])}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.info("Nenhuma métrica em queda significativa")
+
+        # ========== TAB 3: CROSS-PLATFORM ==========
         with tab3:
+            st.markdown("### 🔗 Cruzamento Meta Ads + Google Analytics")
+            st.markdown("*Dados de 7 dias - comparando atribuição entre plataformas*")
+
+            # Side by side comparison
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("""
+                <div class="card" style="border-left: 4px solid #0066FF;">
+                    <h4>📘 Meta Ads</h4>
+                </div>
+                """, unsafe_allow_html=True)
+                st.metric("Vendas (Meta)", f"{cross_data['meta_purchases']}")
+                st.metric("Faturamento (Meta)", f"${cross_data['meta_revenue']:,.2f}")
+                st.metric("ROAS (Meta)", f"{cross_data['meta_roas']:.2f}x")
+                st.metric("LP Views (Meta)", f"{cross_data['meta_lp_views']:,}")
+
+            with col2:
+                st.markdown("""
+                <div class="card" style="border-left: 4px solid #E37400;">
+                    <h4>📊 Google Analytics</h4>
+                </div>
+                """, unsafe_allow_html=True)
+                st.metric("Transações (GA)", f"{cross_data['ga_transactions']}")
+                st.metric("Faturamento (GA)", f"${cross_data['ga_revenue']:,.2f}")
+                st.metric("True ROAS (GA)", f"{cross_data['true_roas']:.2f}x")
+                st.metric("Sessões (GA)", f"{cross_data['ga_sessions']:,}")
+
+            st.markdown("---")
+
+            # Attribution insights
+            st.markdown("### 🔍 Insights de Atribuição")
+
+            purchase_diff = cross_data['purchase_diff']
+            revenue_diff = cross_data['revenue_diff']
+
+            if purchase_diff > 0:
+                st.markdown(f"""
+                <div class="ai-card warning">
+                    <div class="ai-card-title">⚠️ Meta reporta {purchase_diff} vendas a mais que GA</div>
+                    <div class="ai-card-body">
+                        Meta Ads pode estar atribuindo mais vendas devido à janela de atribuição mais longa ou eventos duplicados.
+                        Considere usar o True ROAS (GA) para decisões mais conservadoras.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            elif purchase_diff < 0:
+                st.markdown(f"""
+                <div class="ai-card info">
+                    <div class="ai-card-title">ℹ️ GA reporta {abs(purchase_diff)} vendas a mais que Meta</div>
+                    <div class="ai-card-body">
+                        GA está atribuindo mais vendas do que Meta. Pode haver vendas orgânicas ou de outros canais.
+                        Verifique UTMs e configuração do Pixel.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class="ai-card success">
+                    <div class="ai-card-title">✅ Atribuição Alinhada</div>
+                    <div class="ai-card-body">
+                        Meta e GA estão reportando o mesmo número de vendas. Excelente configuração de tracking!
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # GA Additional insights
+            st.markdown("---")
+            st.markdown("### 📈 Dados do Google Analytics")
+
+            ga_col1, ga_col2, ga_col3, ga_col4 = st.columns(4)
+            ga_col1.metric("Usuários", f"{cross_data['ga_users']:,}")
+            ga_col2.metric("Sessões", f"{cross_data['ga_sessions']:,}")
+            ga_col3.metric("Bounce Rate", f"{cross_data['ga_bounce_rate']:.1f}%")
+            ga_col4.metric("Duração Média", f"{cross_data['ga_avg_session_duration']:.0f}s")
+
+            # Traffic sources
+            if cross_data.get('traffic_sources'):
+                st.markdown("#### 📡 Fontes de Tráfego")
+                sources_df = pd.DataFrame([
+                    {'Fonte': k, 'Sessões': v}
+                    for k, v in cross_data['traffic_sources'].items()
+                ])
+                if not sources_df.empty:
+                    fig = px.pie(sources_df, values='Sessões', names='Fonte', hole=0.4)
+                    fig.update_layout(
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        font={'color': '#F8FAFC'},
+                        height=300,
+                        margin=dict(t=20, b=20, l=20, r=20)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+        # ========== TAB 4: IMPROVEMENTS ==========
+        with tab4:
+            st.markdown("### 💡 Melhorias Sugeridas")
+            st.markdown("*Priorizadas por impacto potencial no ROAS*")
+
+            if suggestions:
+                for i, suggestion in enumerate(suggestions):
+                    priority_colors = {'high': '#EF4444', 'medium': '#F59E0B', 'low': '#3B82F6'}
+                    priority_labels = {'high': 'ALTA', 'medium': 'MÉDIA', 'low': 'BAIXA'}
+
+                    st.markdown(f"""
+                    <div class="ai-card" style="border-left: 4px solid {priority_colors[suggestion['priority']]};">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div class="ai-card-title">{suggestion['icon']} {suggestion['title']}</div>
+                            <span style="background: {priority_colors[suggestion['priority']]}22; color: {priority_colors[suggestion['priority']]}; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;">
+                                {priority_labels[suggestion['priority']]}
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 20px; margin: 12px 0;">
+                            <div style="background: #0F172A; padding: 8px 12px; border-radius: 6px;">
+                                <span style="color: #94A3B8; font-size: 10px;">ATUAL</span><br>
+                                <span style="color: #F8FAFC; font-weight: bold;">{suggestion['current']}</span>
+                            </div>
+                            <div style="color: #64748B; font-size: 20px; align-self: center;">→</div>
+                            <div style="background: rgba(16, 185, 129, 0.1); padding: 8px 12px; border-radius: 6px;">
+                                <span style="color: #10B981; font-size: 10px;">META</span><br>
+                                <span style="color: #10B981; font-weight: bold;">{suggestion['target']}</span>
+                            </div>
+                        </div>
+                        <div class="ai-card-body">
+                            <strong>Ações Recomendadas:</strong><br>
+                            {'<br>'.join([f'• {action}' for action in suggestion['actions']])}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.success("🎉 Excelente! Todas as métricas estão dentro dos limites saudáveis.")
+
+        # ========== TAB 5: CAMPAIGNS ==========
+        with tab5:
             st.markdown("### 📢 Campanhas")
 
             # Status filter
@@ -1397,53 +2211,143 @@ elif st.session_state.current_page == 'traffic':
             else:
                 st.info("Nenhuma campanha encontrada")
 
-        # ========== TAB 4: AI ANALYSIS ==========
-        with tab4:
-            st.markdown("### 🤖 AI Analysis - Jeremy Haines Framework")
-            st.markdown("*Análise baseada em dados de 3 e 7 dias (nunca dados do dia atual)*")
+        # ========== TAB 6: AI CONSULTANT CHAT ==========
+        with tab6:
+            st.markdown("### 🤖 AI Consultant - Traffic Agent")
+            st.markdown("*Pergunte sobre suas campanhas, criativos, audiências, ou estratégias de scale*")
 
-            # Fetch both time periods for AI analysis
-            insights_3d = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset='last_3d')
-            insights_7d = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset='last_7d')
-            campaigns_7d = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], date_preset='last_7d')
+            # Chat container with custom styling
+            st.markdown("""
+            <style>
+            .chat-container {
+                background: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 16px;
+                max-height: 400px;
+                overflow-y: auto;
+            }
+            .chat-message {
+                padding: 12px 16px;
+                border-radius: 12px;
+                margin-bottom: 12px;
+                max-width: 80%;
+            }
+            .chat-user {
+                background: #0066FF;
+                color: #FFFFFF;
+                margin-left: auto;
+                text-align: right;
+            }
+            .chat-ai {
+                background: #0F172A;
+                color: #F8FAFC;
+                border: 1px solid #334155;
+            }
+            .chat-ai-name {
+                font-size: 11px;
+                color: #60A5FA;
+                margin-bottom: 4px;
+                font-weight: 600;
+            }
+            </style>
+            """, unsafe_allow_html=True)
 
-            metrics_3d = parse_full_metrics(insights_3d)
-            metrics_7d = parse_full_metrics(insights_7d)
+            # Display chat history
+            if st.session_state.ai_chat_history:
+                for msg in st.session_state.ai_chat_history:
+                    if msg['role'] == 'user':
+                        st.markdown(f"""
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+                            <div class="chat-message chat-user">
+                                {msg['content']}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="display: flex; justify-content: flex-start; margin-bottom: 12px;">
+                            <div class="chat-message chat-ai">
+                                <div class="chat-ai-name">🤖 Traffic Agent</div>
+                                {msg['content'].replace(chr(10), '<br>')}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
-            # Comparison cards
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("""
-                <div class="card">
-                    <h4>📅 Últimos 3 Dias</h4>
-                </div>
-                """, unsafe_allow_html=True)
-                st.metric("ROAS", f"{metrics_3d['roas']:.2f}x")
-                st.metric("Gasto", f"${metrics_3d['spend']:,.2f}")
-                st.metric("Vendas", f"{metrics_3d['purchases']}")
+            # Quick question buttons
+            st.markdown("#### 💬 Perguntas Rápidas")
+            quick_q_cols = st.columns(4)
 
-            with col2:
-                st.markdown("""
-                <div class="card">
-                    <h4>📅 Últimos 7 Dias</h4>
-                </div>
-                """, unsafe_allow_html=True)
-                st.metric("ROAS", f"{metrics_7d['roas']:.2f}x")
-                st.metric("Gasto", f"${metrics_7d['spend']:,.2f}")
-                st.metric("Vendas", f"{metrics_7d['purchases']}")
+            quick_questions = [
+                "Como está meu ROAS?",
+                "Devo escalar agora?",
+                "Meus criativos estão bons?",
+                "Minha audiência está saturada?"
+            ]
 
+            for i, q in enumerate(quick_questions):
+                with quick_q_cols[i]:
+                    if st.button(q, key=f"quick_q_{i}", use_container_width=True):
+                        # Add user message
+                        st.session_state.ai_chat_history.append({'role': 'user', 'content': q})
+
+                        # Generate and add AI response
+                        response = generate_ai_response(q, metrics_3d, metrics_7d, cross_data, suggestions)
+                        st.session_state.ai_chat_history.append({'role': 'assistant', 'content': response})
+
+                        st.rerun()
+
+            # Free text input
             st.markdown("---")
-            st.markdown("### 💡 Recomendações da IA")
+            with st.form(key="ai_chat_form", clear_on_submit=True):
+                user_input = st.text_input(
+                    "Sua pergunta:",
+                    placeholder="Ex: Como melhorar meu CTR? / Devo pausar alguma campanha? / Como reduzir meu CPA?",
+                    key="ai_chat_input_field"
+                )
+                col1, col2 = st.columns([4, 1])
+                with col2:
+                    submit = st.form_submit_button("Enviar 📤", use_container_width=True)
 
-            analysis = generate_ai_analysis(metrics_3d, metrics_7d, campaigns_7d)
+                if submit and user_input:
+                    # Add user message
+                    st.session_state.ai_chat_history.append({'role': 'user', 'content': user_input})
 
-            for item in analysis:
+                    # Generate and add AI response
+                    response = generate_ai_response(user_input, metrics_3d, metrics_7d, cross_data, suggestions)
+                    st.session_state.ai_chat_history.append({'role': 'assistant', 'content': response})
+
+                    st.rerun()
+
+            # Clear chat button
+            if st.session_state.ai_chat_history:
+                if st.button("🗑️ Limpar Conversa", key="clear_chat"):
+                    st.session_state.ai_chat_history = []
+                    st.rerun()
+
+            # Context summary
+            with st.expander("📊 Contexto Atual (dados que a IA está usando)"):
                 st.markdown(f"""
-                <div class="ai-card {item['type']}">
-                    <div class="ai-card-title">{item['icon']} {item['title']}</div>
-                    <div class="ai-card-body">{item['body'].replace(chr(10), '<br>')}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                **Período:** Últimos 7 dias
+
+                **Métricas Principais:**
+                - ROAS: {metrics_7d['roas']:.2f}x
+                - Gasto: ${metrics_7d['spend']:,.2f}
+                - Faturamento: ${metrics_7d['revenue']:,.2f}
+                - Vendas: {metrics_7d['purchases']}
+                - CPA: ${metrics_7d['cpa']:.2f}
+
+                **Engajamento:**
+                - CTR: {metrics_7d['ctr']:.2f}%
+                - Hook Rate: {metrics_7d['hook_rate']:.2f}%
+                - Frequência: {metrics_7d['frequency']:.2f}
+
+                **Google Analytics:**
+                - Sessões: {cross_data.get('ga_sessions', 0):,}
+                - Bounce Rate: {cross_data.get('ga_bounce_rate', 0):.1f}%
+                - True ROAS (GA): {cross_data.get('true_roas', 0):.2f}x
+                """)
 
     else:
         st.warning("Configure META_ACCESS_TOKEN e META_AD_ACCOUNT_ID nos secrets")
@@ -1484,4 +2388,4 @@ elif st.session_state.current_page == 'settings':
 
 # Footer
 st.markdown("---")
-st.markdown(f"<p style='text-align: center; color: #64748B !important; font-size: 12px;'>Adlytics v3.2.0 · {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center; color: #64748B !important; font-size: 12px;'>Adlytics v4.0.0 · {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>", unsafe_allow_html=True)

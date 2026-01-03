@@ -33,6 +33,13 @@ from .heygen import (
     Avatar,
     VideoResult
 )
+from .google_analytics import (
+    GoogleAnalyticsAdapter,
+    GAMetric,
+    GADimension,
+    GAReport,
+    get_mock_ga_data
+)
 
 __all__ = [
     # Meta & Attribution
@@ -61,5 +68,11 @@ __all__ = [
     'VideoQuality',
     'AvatarType',
     'Avatar',
-    'VideoResult'
+    'VideoResult',
+    # Analytics
+    'GoogleAnalyticsAdapter',
+    'GAMetric',
+    'GADimension',
+    'GAReport',
+    'get_mock_ga_data'
 ]
