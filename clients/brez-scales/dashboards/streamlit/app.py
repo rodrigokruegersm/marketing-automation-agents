@@ -165,14 +165,23 @@ BASE_URL = f"https://graph.facebook.com/{API_VERSION}"
 # =============================================================================
 
 @st.cache_data(ttl=300)
-def fetch_account_insights(date_preset='last_3d'):
+def fetch_account_insights(date_preset='last_3d', start_date=None, end_date=None):
     """Fetch account-level insights"""
     url = f"{BASE_URL}/{META_AD_ACCOUNT_ID}/insights"
     params = {
         'fields': 'spend,impressions,reach,frequency,cpm,clicks,cpc,ctr,actions,action_values,cost_per_action_type,purchase_roas',
-        'date_preset': date_preset,
         'access_token': META_ACCESS_TOKEN
     }
+
+    # Use custom date range if provided, otherwise use preset
+    if start_date and end_date:
+        params['time_range'] = json.dumps({
+            'since': start_date.strftime('%Y-%m-%d'),
+            'until': end_date.strftime('%Y-%m-%d')
+        })
+    else:
+        params['date_preset'] = date_preset
+
     try:
         response = requests.get(url, params=params)
         data = response.json()
@@ -438,19 +447,58 @@ with st.sidebar:
     st.markdown("## 🎯 Command Center")
     st.markdown("---")
 
-    # Period selector
+    # Period selector - Meta Ads Manager style
+    st.markdown("### 📅 Periodo de Analise")
+
+    date_options = {
+        'today': 'Hoje',
+        'yesterday': 'Ontem',
+        'maximum': 'Maximo',
+        'last_7d': 'Ultimos 7 dias',
+        'last_14d': 'Ultimos 14 dias',
+        'last_28d': 'Ultimos 28 dias',
+        'last_30d': 'Ultimos 30 dias',
+        'this_week_sun_today': 'Esta semana',
+        'last_week_sun_sat': 'Semana passada',
+        'this_month': 'Este mes',
+        'last_month': 'Mes passado',
+        'custom': 'Personalizado'
+    }
+
     date_preset = st.selectbox(
-        "Periodo de Analise",
-        options=['yesterday', 'last_3d', 'last_7d', 'last_14d', 'last_30d'],
-        index=1,
-        format_func=lambda x: {
-            'yesterday': 'Ontem',
-            'last_3d': 'Ultimos 3 dias',
-            'last_7d': 'Ultimos 7 dias',
-            'last_14d': 'Ultimos 14 dias',
-            'last_30d': 'Ultimos 30 dias'
-        }.get(x, x)
+        "Selecione o periodo",
+        options=list(date_options.keys()),
+        index=3,  # Default: last_7d
+        format_func=lambda x: date_options.get(x, x),
+        label_visibility="collapsed"
     )
+
+    # Custom date range picker
+    custom_start = None
+    custom_end = None
+
+    if date_preset == 'custom':
+        st.markdown("**Selecione as datas:**")
+        col_start, col_end = st.columns(2)
+        with col_start:
+            custom_start = st.date_input(
+                "De",
+                value=datetime.now() - timedelta(days=7),
+                max_value=datetime.now(),
+                label_visibility="collapsed"
+            )
+        with col_end:
+            custom_end = st.date_input(
+                "Ate",
+                value=datetime.now(),
+                max_value=datetime.now(),
+                label_visibility="collapsed"
+            )
+
+        # Show selected range
+        if custom_start and custom_end:
+            days_diff = (custom_end - custom_start).days + 1
+            st.caption(f"📊 {days_diff} dias selecionados")
 
     st.markdown("---")
 
@@ -485,7 +533,10 @@ st.markdown("*Central de controle para gestao de trafego pago*")
 
 # Fetch data
 with st.spinner("Carregando dados..."):
-    raw_data = fetch_account_insights(date_preset)
+    if date_preset == 'custom' and custom_start and custom_end:
+        raw_data = fetch_account_insights(start_date=custom_start, end_date=custom_end)
+    else:
+        raw_data = fetch_account_insights(date_preset=date_preset)
     metrics = parse_metrics(raw_data)
     campaigns = fetch_campaigns()
 
@@ -834,9 +885,24 @@ if metrics:
         st.markdown("### 💼 Comissao da Agencia")
 
         commission = metrics['profit'] * 0.20
-        days_map = {'yesterday': 1, 'last_3d': 3, 'last_7d': 7, 'last_14d': 14, 'last_30d': 30}
-        days = days_map.get(date_preset, 3)
-        daily_commission = commission / days
+        days_map = {
+            'today': 1,
+            'yesterday': 1,
+            'maximum': 90,
+            'last_7d': 7,
+            'last_14d': 14,
+            'last_28d': 28,
+            'last_30d': 30,
+            'this_week_sun_today': 7,
+            'last_week_sun_sat': 7,
+            'this_month': 30,
+            'last_month': 30
+        }
+        if date_preset == 'custom' and custom_start and custom_end:
+            days = (custom_end - custom_start).days + 1
+        else:
+            days = days_map.get(date_preset, 7)
+        daily_commission = commission / max(days, 1)
 
         c1, c2, c3, c4 = st.columns(4)
 
