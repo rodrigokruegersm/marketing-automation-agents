@@ -93,39 +93,113 @@ class GoogleAnalyticsAdapter:
         self,
         property_id: str,
         access_token: Optional[str] = None,
-        service_account_json: Optional[str] = None
+        service_account_json: Optional[str] = None,
+        credentials_json: Optional[str] = None
     ):
         """
         Initialize GA4 adapter
 
         Args:
-            property_id: GA4 property ID (e.g., "properties/123456789")
+            property_id: GA4 property ID (e.g., "517600570" or "properties/517600570")
             access_token: OAuth2 access token
             service_account_json: Path to service account JSON file
+            credentials_json: Service account JSON as string (alternative to file)
         """
-        self.property_id = property_id
+        # Ensure property_id is in correct format
+        if property_id and not property_id.startswith("properties/"):
+            self.property_id = f"properties/{property_id}"
+        else:
+            self.property_id = property_id
+
         self.access_token = access_token
         self.service_account_json = service_account_json
+        self.credentials_json = credentials_json
         self._token = None
         self._token_expiry = None
+        self._credentials = None
+
+        # Parse credentials JSON if provided as string
+        if credentials_json:
+            try:
+                self._credentials = json.loads(credentials_json) if isinstance(credentials_json, str) else credentials_json
+            except json.JSONDecodeError:
+                self._credentials = None
 
     def _get_headers(self) -> Dict[str, str]:
         """Get authentication headers"""
-        token = self.access_token or self._get_service_account_token()
+        token = self._get_auth_token()
         return {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
 
+    def _get_auth_token(self) -> str:
+        """Get access token from service account or direct token"""
+        if self.access_token:
+            return self.access_token
+
+        # Try to get token from service account credentials
+        if self._credentials:
+            return self._get_service_account_token()
+
+        return ""
+
     def _get_service_account_token(self) -> str:
-        """Get access token from service account (placeholder)"""
-        # In production, use google-auth library:
-        # from google.oauth2 import service_account
-        # credentials = service_account.Credentials.from_service_account_file(
-        #     self.service_account_json,
-        #     scopes=['https://www.googleapis.com/auth/analytics.readonly']
-        # )
-        return self.access_token or ""
+        """Get access token from service account using JWT"""
+        try:
+            import jwt
+            import time
+
+            if not self._credentials:
+                return ""
+
+            # Check if we have a valid cached token
+            if self._token and self._token_expiry and time.time() < self._token_expiry:
+                return self._token
+
+            # Create JWT for service account
+            now = int(time.time())
+            claims = {
+                "iss": self._credentials.get("client_email"),
+                "sub": self._credentials.get("client_email"),
+                "aud": "https://oauth2.googleapis.com/token",
+                "iat": now,
+                "exp": now + 3600,
+                "scope": "https://www.googleapis.com/auth/analytics.readonly"
+            }
+
+            private_key = self._credentials.get("private_key", "")
+
+            # Sign JWT
+            signed_jwt = jwt.encode(
+                claims,
+                private_key,
+                algorithm="RS256"
+            )
+
+            # Exchange JWT for access token
+            response = requests.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                    "assertion": signed_jwt
+                }
+            )
+
+            if response.status_code == 200:
+                token_data = response.json()
+                self._token = token_data.get("access_token")
+                self._token_expiry = now + token_data.get("expires_in", 3600) - 60
+                return self._token
+
+            return ""
+
+        except ImportError:
+            # PyJWT not installed, return empty (will use mock data)
+            return ""
+        except Exception as e:
+            print(f"GA Auth error: {e}")
+            return ""
 
     def run_report(
         self,
