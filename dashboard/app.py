@@ -7,11 +7,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import requests
 import json
 import os
 import sys
+import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -172,6 +173,10 @@ if 'current_page' not in st.session_state:
     st.session_state.current_page = 'dashboard'
 if 'date_range' not in st.session_state:
     st.session_state.date_range = 'last_7d'
+if 'custom_start_date' not in st.session_state:
+    st.session_state.custom_start_date = date.today() - timedelta(days=7)
+if 'custom_end_date' not in st.session_state:
+    st.session_state.custom_end_date = date.today() - timedelta(days=1)
 
 # =============================================================================
 # API CONFIG
@@ -200,16 +205,31 @@ def get_credentials():
 # API FUNCTIONS
 # =============================================================================
 
+# All Meta Ads fields we need for comprehensive analysis
+META_FIELDS = ','.join([
+    'spend', 'impressions', 'reach', 'clicks', 'cpm', 'cpc', 'ctr', 'frequency',
+    'actions', 'action_values', 'cost_per_action_type', 'purchase_roas',
+    'video_p25_watched_actions', 'video_p50_watched_actions', 'video_p75_watched_actions',
+    'video_p100_watched_actions', 'video_play_actions'
+])
+
 @st.cache_data(ttl=120)
-def fetch_account_insights(account_id: str, token: str, date_preset: str = 'last_7d'):
+def fetch_account_insights(account_id: str, token: str, date_preset: str = None, start_date: str = None, end_date: str = None):
+    """Fetch account insights with preset or custom date range"""
     if not account_id or not token:
         return None
     url = f"{BASE_URL}/{account_id}/insights"
     params = {
-        'fields': 'spend,impressions,reach,clicks,cpm,cpc,ctr,frequency,actions,action_values,cost_per_action_type,purchase_roas',
-        'date_preset': date_preset,
+        'fields': META_FIELDS,
         'access_token': token
     }
+
+    # Use custom date range or preset
+    if start_date and end_date:
+        params['time_range'] = json.dumps({'since': start_date, 'until': end_date})
+    else:
+        params['date_preset'] = date_preset or 'last_7d'
+
     try:
         response = requests.get(url, params=params)
         data = response.json()
@@ -220,12 +240,21 @@ def fetch_account_insights(account_id: str, token: str, date_preset: str = 'last
     return None
 
 @st.cache_data(ttl=120)
-def fetch_campaigns_with_insights(account_id: str, token: str, date_preset: str = 'last_7d'):
+def fetch_campaigns_with_insights(account_id: str, token: str, date_preset: str = None, start_date: str = None, end_date: str = None):
+    """Fetch campaigns with insights using preset or custom date range"""
     if not account_id or not token:
         return []
     url = f"{BASE_URL}/{account_id}/campaigns"
+
+    # Build insights clause
+    if start_date and end_date:
+        insights_clause = f'insights.time_range({{"since":"{start_date}","until":"{end_date}"}}){{{META_FIELDS}}}'
+    else:
+        preset = date_preset or 'last_7d'
+        insights_clause = f'insights.date_preset({preset}){{{META_FIELDS}}}'
+
     params = {
-        'fields': f'id,name,status,effective_status,daily_budget,lifetime_budget,objective,insights.date_preset({date_preset}){{spend,impressions,reach,clicks,cpm,cpc,ctr,frequency,actions,action_values,cost_per_action_type}}',
+        'fields': f'id,name,status,effective_status,daily_budget,lifetime_budget,objective,{insights_clause}',
         'limit': 100,
         'access_token': token
     }
@@ -257,6 +286,7 @@ def update_campaign_budget(campaign_id: str, daily_budget: int, token: str):
         return {'error': 'Failed'}
 
 def extract_action(actions, action_type):
+    """Extract action value by type"""
     if not actions:
         return 0
     for a in actions:
@@ -264,39 +294,123 @@ def extract_action(actions, action_type):
             return float(a.get('value', 0))
     return 0
 
+def extract_cost_per_action(cost_per_action_type, action_type):
+    """Extract cost per action by type"""
+    if not cost_per_action_type:
+        return 0
+    for a in cost_per_action_type:
+        if a.get('action_type') == action_type:
+            return float(a.get('value', 0))
+    return 0
+
+def extract_video_views(data, threshold='video_p25'):
+    """Extract video views for hook rate calculation"""
+    video_actions = data.get(f'{threshold}_watched_actions', [])
+    if video_actions:
+        for v in video_actions:
+            if v.get('action_type') in ['video_view', 'video_p25_watched']:
+                return float(v.get('value', 0))
+    return 0
+
 def parse_full_metrics(data):
+    """Parse all metrics from Meta Ads API response"""
     if not data:
         return {
             'spend': 0, 'revenue': 0, 'profit': 0, 'roas': 0,
-            'impressions': 0, 'reach': 0, 'clicks': 0, 'ctr': 0, 'cpc': 0, 'cpm': 0,
-            'purchases': 0, 'cpa': 0, 'landing_page_views': 0, 'initiate_checkout': 0,
-            'add_to_cart': 0, 'frequency': 0
+            'impressions': 0, 'reach': 0, 'clicks': 0, 'link_clicks': 0,
+            'ctr': 0, 'cpc': 0, 'cpm': 0, 'frequency': 0,
+            'purchases': 0, 'cpa': 0, 'avg_purchase_value': 0,
+            'landing_page_views': 0, 'lp_view_rate': 0,
+            'initiate_checkout': 0, 'cost_per_checkout': 0,
+            'add_to_cart': 0, 'cost_per_purchase': 0, 'cost_per_result': 0,
+            'hook_rate': 0, 'video_plays': 0, 'video_25_views': 0,
+            'results': 0
         }
 
     spend = float(data.get('spend', 0))
-    revenue = extract_action(data.get('action_values', []), 'purchase')
-    purchases = extract_action(data.get('actions', []), 'purchase')
-    landing_page_views = extract_action(data.get('actions', []), 'landing_page_view')
-    initiate_checkout = extract_action(data.get('actions', []), 'initiate_checkout')
-    add_to_cart = extract_action(data.get('actions', []), 'add_to_cart')
+    impressions = int(data.get('impressions', 0))
+
+    # Actions
+    actions = data.get('actions', [])
+    purchases = extract_action(actions, 'purchase')
+    landing_page_views = extract_action(actions, 'landing_page_view')
+    initiate_checkout = extract_action(actions, 'initiate_checkout')
+    add_to_cart = extract_action(actions, 'add_to_cart')
+    link_clicks = extract_action(actions, 'link_click')
+
+    # Video actions for hook rate
+    video_play_actions = data.get('video_play_actions', [])
+    video_plays = 0
+    for v in video_play_actions:
+        if v.get('action_type') == 'video_view':
+            video_plays = float(v.get('value', 0))
+            break
+
+    video_25_actions = data.get('video_p25_watched_actions', [])
+    video_25_views = 0
+    for v in video_25_actions:
+        video_25_views = float(v.get('value', 0))
+        break
+
+    # Action values (revenue)
+    action_values = data.get('action_values', [])
+    revenue = extract_action(action_values, 'purchase')
+
+    # Cost per action
+    cost_per_action = data.get('cost_per_action_type', [])
+    cost_per_checkout = extract_cost_per_action(cost_per_action, 'initiate_checkout')
+    cost_per_purchase = extract_cost_per_action(cost_per_action, 'purchase')
+
+    # Calculate derived metrics
+    roas = revenue / spend if spend > 0 else 0
+    profit = revenue - spend
+    cpa = spend / purchases if purchases > 0 else 0
+    avg_purchase_value = revenue / purchases if purchases > 0 else 0
+    lp_view_rate = (landing_page_views / link_clicks * 100) if link_clicks > 0 else 0
+    hook_rate = (video_25_views / impressions * 100) if impressions > 0 else 0
+
+    # Results = purchases for e-commerce
+    results = purchases
+    cost_per_result = cpa
 
     return {
+        # Spend & Revenue
         'spend': spend,
         'revenue': revenue,
-        'profit': revenue - spend,
-        'roas': revenue / spend if spend > 0 else 0,
-        'impressions': int(data.get('impressions', 0)),
+        'profit': profit,
+        'roas': roas,
+        'avg_purchase_value': avg_purchase_value,
+
+        # Reach & Impressions
+        'impressions': impressions,
         'reach': int(data.get('reach', 0)),
+        'frequency': float(data.get('frequency', 0)),
+
+        # Clicks
         'clicks': int(data.get('clicks', 0)),
+        'link_clicks': int(link_clicks),
         'ctr': float(data.get('ctr', 0)),
         'cpc': float(data.get('cpc', 0)),
         'cpm': float(data.get('cpm', 0)),
-        'purchases': int(purchases),
-        'cpa': spend / purchases if purchases > 0 else 0,
+
+        # Video (for Hook Rate)
+        'video_plays': int(video_plays),
+        'video_25_views': int(video_25_views),
+        'hook_rate': hook_rate,
+
+        # Funnel metrics
         'landing_page_views': int(landing_page_views),
+        'lp_view_rate': lp_view_rate,
         'initiate_checkout': int(initiate_checkout),
+        'cost_per_checkout': cost_per_checkout,
         'add_to_cart': int(add_to_cart),
-        'frequency': float(data.get('frequency', 0))
+
+        # Conversions
+        'purchases': int(purchases),
+        'results': int(results),
+        'cpa': cpa,
+        'cost_per_purchase': cost_per_purchase,
+        'cost_per_result': cost_per_result
     }
 
 # =============================================================================
@@ -676,30 +790,261 @@ elif st.session_state.current_page == 'traffic':
     st.markdown("*Análise de campanhas e otimização baseada em dados*")
 
     if creds['meta_token'] and creds['meta_account']:
+
+        # ========== DATE FILTER (Meta Ads Manager Style) ==========
+        st.markdown("### 📅 Período de Análise")
+
+        date_col1, date_col2, date_col3, date_col4 = st.columns([2, 1.5, 1.5, 1])
+
+        with date_col1:
+            date_presets = {
+                'Hoje': 'today',
+                'Ontem': 'yesterday',
+                'Últimos 3 dias': 'last_3d',
+                'Últimos 7 dias': 'last_7d',
+                'Últimos 14 dias': 'last_14d',
+                'Últimos 30 dias': 'last_30d',
+                'Este mês': 'this_month',
+                'Mês passado': 'last_month',
+                'Personalizado': 'custom'
+            }
+            selected_preset = st.selectbox("Período", list(date_presets.keys()), index=3, key="traffic_date_preset")
+            date_preset = date_presets[selected_preset]
+
+        # Custom date range inputs
+        use_custom_dates = date_preset == 'custom'
+        start_date_str = None
+        end_date_str = None
+
+        if use_custom_dates:
+            with date_col2:
+                custom_start = st.date_input("Data inicial", value=st.session_state.custom_start_date, key="traffic_start")
+                st.session_state.custom_start_date = custom_start
+            with date_col3:
+                custom_end = st.date_input("Data final", value=st.session_state.custom_end_date, key="traffic_end")
+                st.session_state.custom_end_date = custom_end
+            start_date_str = custom_start.strftime('%Y-%m-%d')
+            end_date_str = custom_end.strftime('%Y-%m-%d')
+
+        with date_col4:
+            if st.button("🔄 Atualizar", key="refresh_traffic", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+
+        st.markdown("---")
+
+        # Fetch data based on date selection
+        if use_custom_dates:
+            insights = fetch_account_insights(creds['meta_account'], creds['meta_token'], start_date=start_date_str, end_date=end_date_str)
+            campaigns = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], start_date=start_date_str, end_date=end_date_str)
+        else:
+            insights = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset=date_preset)
+            campaigns = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], date_preset=date_preset)
+
+        metrics = parse_full_metrics(insights)
+
         # Tabs
-        tab1, tab2, tab3 = st.tabs(["📢 Campanhas", "🤖 AI Analysis", "📈 Métricas"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Funil", "📋 Tabela Completa", "📢 Campanhas", "🤖 AI Analysis"])
 
+        # ========== TAB 1: FUNNEL VISUALIZATION ==========
         with tab1:
-            # Filters
-            col1, col2, col3 = st.columns([2, 1, 1])
-            with col1:
-                status_filter = st.selectbox("Status", ["Todas", "Ativas", "Pausadas"])
-            with col3:
-                if st.button("🔄 Atualizar", key="refresh_camps", use_container_width=True):
-                    st.cache_data.clear()
-                    st.rerun()
+            st.markdown("### 📊 Funil de Conversão")
 
-            campaigns = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], 'last_7d')
+            # Main funnel visualization
+            st.markdown("""
+            <div class="funnel-container">
+                <div class="funnel-title">🎯 Jornada do Cliente</div>
+            """, unsafe_allow_html=True)
+
+            # Calculate rates
+            impr = metrics['impressions']
+            reach = metrics['reach']
+            clicks = metrics['link_clicks'] if metrics['link_clicks'] > 0 else metrics['clicks']
+            lp_views = metrics['landing_page_views']
+            checkouts = metrics['initiate_checkout']
+            purchases = metrics['purchases']
+
+            click_rate = (clicks / impr * 100) if impr > 0 else 0
+            lp_rate = (lp_views / clicks * 100) if clicks > 0 else 0
+            checkout_rate = (checkouts / lp_views * 100) if lp_views > 0 else 0
+            purchase_rate = (purchases / checkouts * 100) if checkouts > 0 else 0
+            overall_cvr = (purchases / clicks * 100) if clicks > 0 else 0
+
+            st.markdown(f"""
+                <div class="funnel-grid">
+                    <div class="funnel-item">
+                        <div class="funnel-item-label">Impressões</div>
+                        <div class="funnel-item-value">{impr:,}</div>
+                        <div class="funnel-item-pct">100%</div>
+                    </div>
+                    <div class="funnel-item">
+                        <div class="funnel-item-label">Cliques</div>
+                        <div class="funnel-item-value">{clicks:,}</div>
+                        <div class="funnel-item-pct">{click_rate:.2f}%</div>
+                    </div>
+                    <div class="funnel-item">
+                        <div class="funnel-item-label">Vis. Página</div>
+                        <div class="funnel-item-value">{lp_views:,}</div>
+                        <div class="funnel-item-pct">{lp_rate:.1f}%</div>
+                    </div>
+                    <div class="funnel-item">
+                        <div class="funnel-item-label">Init. Checkout</div>
+                        <div class="funnel-item-value">{checkouts:,}</div>
+                        <div class="funnel-item-pct">{checkout_rate:.1f}%</div>
+                    </div>
+                    <div class="funnel-item">
+                        <div class="funnel-item-label">Vendas</div>
+                        <div class="funnel-item-value">{purchases:,}</div>
+                        <div class="funnel-item-pct">{purchase_rate:.1f}%</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # Key metrics summary
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Taxa de Conversão</div>
+                    <div class="kpi-value">{overall_cvr:.2f}%</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Hook Rate</div>
+                    <div class="kpi-value">{metrics['hook_rate']:.2f}%</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col3:
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">Taxa LP View</div>
+                    <div class="kpi-value">{metrics['lp_view_rate']:.1f}%</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col4:
+                roas_class = "green" if metrics['roas'] >= 2 else "yellow" if metrics['roas'] >= 1 else "red"
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">ROAS</div>
+                    <div class="kpi-value {roas_class}">{metrics['roas']:.2f}x</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Funnel chart (visual)
+            st.markdown("<br>", unsafe_allow_html=True)
+            fig = go.Figure(go.Funnel(
+                y = ["Impressões", "Cliques", "LP Views", "Checkouts", "Vendas"],
+                x = [impr, clicks, lp_views, checkouts, purchases],
+                textposition = "inside",
+                textinfo = "value+percent previous",
+                marker = {
+                    "color": ["#3B82F6", "#6366F1", "#8B5CF6", "#A855F7", "#10B981"]
+                },
+                connector = {"line": {"color": "#334155", "width": 1}}
+            ))
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font={'color': '#F8FAFC'},
+                height=350,
+                margin=dict(t=20, b=20, l=20, r=20)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        # ========== TAB 2: COMPLETE METRICS TABLE ==========
+        with tab2:
+            st.markdown("### 📋 Todas as Métricas")
+
+            # Group metrics by category
+            st.markdown("#### 📣 Alcance & Impressões")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Alcance", f"{metrics['reach']:,}")
+            col2.metric("Impressões", f"{metrics['impressions']:,}")
+            col3.metric("Frequência", f"{metrics['frequency']:.2f}")
+            col4.metric("CPM", f"${metrics['cpm']:.2f}")
+
+            st.markdown("---")
+            st.markdown("#### 🖱️ Engajamento & Cliques")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Hook Rate", f"{metrics['hook_rate']:.2f}%")
+            col2.metric("Cliques no Link", f"{metrics['link_clicks']:,}")
+            col3.metric("CTR", f"{metrics['ctr']:.2f}%")
+            col4.metric("CPC", f"${metrics['cpc']:.2f}")
+
+            st.markdown("---")
+            st.markdown("#### 📄 Landing Page")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Visualizações LP", f"{metrics['landing_page_views']:,}")
+            col2.metric("Taxa LP View", f"{metrics['lp_view_rate']:.1f}%")
+            col3.metric("Add to Cart", f"{metrics['add_to_cart']:,}")
+            col4.metric("-", "-")
+
+            st.markdown("---")
+            st.markdown("#### 🛒 Checkout & Vendas")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Checkouts Iniciados", f"{metrics['initiate_checkout']:,}")
+            col2.metric("Custo por Checkout", f"${metrics['cost_per_checkout']:.2f}")
+            col3.metric("Resultados (Vendas)", f"{metrics['results']:,}")
+            col4.metric("Custo por Resultado", f"${metrics['cost_per_result']:.2f}")
+
+            st.markdown("---")
+            st.markdown("#### 💰 Financeiro")
+            col1, col2, col3, col4, col5 = st.columns(5)
+            col1.metric("Gasto Total", f"${metrics['spend']:,.2f}")
+            col2.metric("Valor Conversões", f"${metrics['revenue']:,.2f}")
+            col3.metric("Ticket Médio", f"${metrics['avg_purchase_value']:.2f}")
+            col4.metric("ROAS", f"{metrics['roas']:.2f}x")
+            col5.metric("Lucro", f"${metrics['profit']:,.2f}")
+
+            # Export as DataFrame
+            st.markdown("---")
+            st.markdown("#### 📥 Exportar Dados")
+            metrics_df = pd.DataFrame([{
+                'Alcance': metrics['reach'],
+                'Impressões': metrics['impressions'],
+                'Frequência': round(metrics['frequency'], 2),
+                'Hook Rate (%)': round(metrics['hook_rate'], 2),
+                'Cliques Link': metrics['link_clicks'],
+                'CPM ($)': round(metrics['cpm'], 2),
+                'CTR (%)': round(metrics['ctr'], 2),
+                'CPC ($)': round(metrics['cpc'], 2),
+                'LP Views': metrics['landing_page_views'],
+                'Taxa LP View (%)': round(metrics['lp_view_rate'], 1),
+                'Checkouts': metrics['initiate_checkout'],
+                'Custo/Checkout ($)': round(metrics['cost_per_checkout'], 2),
+                'Vendas': metrics['purchases'],
+                'Custo/Venda ($)': round(metrics['cost_per_purchase'], 2),
+                'Custo/Resultado ($)': round(metrics['cost_per_result'], 2),
+                'Gasto Total ($)': round(metrics['spend'], 2),
+                'Faturamento ($)': round(metrics['revenue'], 2),
+                'Ticket Médio ($)': round(metrics['avg_purchase_value'], 2),
+                'ROAS': round(metrics['roas'], 2),
+                'Lucro ($)': round(metrics['profit'], 2)
+            }])
+            st.dataframe(metrics_df.T.rename(columns={0: 'Valor'}), use_container_width=True)
+
+        # ========== TAB 3: CAMPAIGNS TABLE ==========
+        with tab3:
+            st.markdown("### 📢 Campanhas")
+
+            # Status filter
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                status_filter = st.selectbox("Filtrar por Status", ["Todas", "Ativas", "Pausadas"], key="camp_status_filter")
 
             # Filter campaigns
+            filtered_campaigns = campaigns
             if status_filter == "Ativas":
-                campaigns = [c for c in campaigns if c.get('effective_status') == 'ACTIVE']
+                filtered_campaigns = [c for c in campaigns if c.get('effective_status') == 'ACTIVE']
             elif status_filter == "Pausadas":
-                campaigns = [c for c in campaigns if c.get('effective_status') == 'PAUSED']
+                filtered_campaigns = [c for c in campaigns if c.get('effective_status') == 'PAUSED']
 
-            if campaigns:
-                st.markdown("### Campanhas")
-
+            if filtered_campaigns:
                 # Table header
                 st.markdown("""
                 <table class="campaign-table">
@@ -719,11 +1064,11 @@ elif st.session_state.current_page == 'traffic':
                 </table>
                 """, unsafe_allow_html=True)
 
-                for camp in campaigns:
+                for camp in filtered_campaigns:
                     camp_id = camp.get('id', '')
                     name = camp.get('name', 'N/A')
                     status = camp.get('effective_status', 'UNKNOWN')
-                    daily_budget = int(camp.get('daily_budget', 0)) / 100  # Convert from cents
+                    daily_budget = int(camp.get('daily_budget', 0)) / 100
 
                     # Get campaign insights
                     camp_data = camp.get('insights', {}).get('data', [{}])[0] if camp.get('insights') else {}
@@ -750,8 +1095,8 @@ elif st.session_state.current_page == 'traffic':
                     with cols[6]:
                         st.markdown(f"${camp_metrics['revenue']:,.2f}")
                     with cols[7]:
-                        roas_color = "green" if camp_metrics['roas'] >= 2 else "yellow" if camp_metrics['roas'] >= 1 else "red"
-                        st.markdown(f"<span style='color: {'#10B981' if roas_color == 'green' else '#F59E0B' if roas_color == 'yellow' else '#EF4444'}'>{camp_metrics['roas']:.2f}x</span>", unsafe_allow_html=True)
+                        roas_color = "#10B981" if camp_metrics['roas'] >= 2 else "#F59E0B" if camp_metrics['roas'] >= 1 else "#EF4444"
+                        st.markdown(f"<span style='color: {roas_color}'>{camp_metrics['roas']:.2f}x</span>", unsafe_allow_html=True)
                     with cols[8]:
                         btn_cols = st.columns(3)
                         with btn_cols[0]:
@@ -786,14 +1131,15 @@ elif st.session_state.current_page == 'traffic':
             else:
                 st.info("Nenhuma campanha encontrada")
 
-        with tab2:
+        # ========== TAB 4: AI ANALYSIS ==========
+        with tab4:
             st.markdown("### 🤖 AI Analysis - Jeremy Haines Framework")
             st.markdown("*Análise baseada em dados de 3 e 7 dias (nunca dados do dia atual)*")
 
-            # Fetch both time periods
-            insights_3d = fetch_account_insights(creds['meta_account'], creds['meta_token'], 'last_3d')
-            insights_7d = fetch_account_insights(creds['meta_account'], creds['meta_token'], 'last_7d')
-            campaigns = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], 'last_7d')
+            # Fetch both time periods for AI analysis
+            insights_3d = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset='last_3d')
+            insights_7d = fetch_account_insights(creds['meta_account'], creds['meta_token'], date_preset='last_7d')
+            campaigns_7d = fetch_campaigns_with_insights(creds['meta_account'], creds['meta_token'], date_preset='last_7d')
 
             metrics_3d = parse_full_metrics(insights_3d)
             metrics_7d = parse_full_metrics(insights_7d)
@@ -823,7 +1169,7 @@ elif st.session_state.current_page == 'traffic':
             st.markdown("---")
             st.markdown("### 💡 Recomendações da IA")
 
-            analysis = generate_ai_analysis(metrics_3d, metrics_7d, campaigns)
+            analysis = generate_ai_analysis(metrics_3d, metrics_7d, campaigns_7d)
 
             for item in analysis:
                 st.markdown(f"""
@@ -832,24 +1178,6 @@ elif st.session_state.current_page == 'traffic':
                     <div class="ai-card-body">{item['body'].replace(chr(10), '<br>')}</div>
                 </div>
                 """, unsafe_allow_html=True)
-
-        with tab3:
-            st.markdown("### 📈 Métricas Detalhadas")
-
-            insights = fetch_account_insights(creds['meta_account'], creds['meta_token'], 'last_7d')
-            metrics = parse_full_metrics(insights)
-
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Impressões", f"{metrics['impressions']:,}")
-            col2.metric("Alcance", f"{metrics['reach']:,}")
-            col3.metric("Cliques", f"{metrics['clicks']:,}")
-            col4.metric("CTR", f"{metrics['ctr']:.2f}%")
-
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("CPC", f"${metrics['cpc']:.2f}")
-            col2.metric("CPM", f"${metrics['cpm']:.2f}")
-            col3.metric("Frequência", f"{metrics['frequency']:.2f}")
-            col4.metric("CPA", f"${metrics['cpa']:.2f}")
 
     else:
         st.warning("Configure META_ACCESS_TOKEN e META_AD_ACCOUNT_ID nos secrets")
