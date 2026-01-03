@@ -1,0 +1,60 @@
+# VSL_CHALLENGE Funnel Configuration
+# Auto-generated from campaign naming convention {VSL_CHALLENGE}
+
+funnel:
+  tag: "VSL_CHALLENGE"
+  name: "VSL Challenge Funnel"
+  type: "vsl_challenge"
+  status: "active"
+
+# KPI Thresholds specific to this funnel type
+thresholds:
+  roas:
+    excellent: 3.5
+    good: 2.5
+    warning: 2.0
+    critical: 1.5
+
+  cpp:  # Cost Per Purchase
+    excellent: 10
+    good: 15
+    warning: 20
+    critical: 30
+
+  cpl:  # Cost Per Lead
+    excellent: 5
+    good: 10
+    warning: 15
+    critical: 25
+
+  frequency:
+    excellent: 1.5
+    good: 2.0
+    warning: 2.5
+    critical: 3.5
+
+  ctr:  # Click Through Rate
+    excellent: 3.0
+    good: 2.0
+    warning: 1.0
+    critical: 0.5
+
+# Funnel stages for tracking
+stages:
+  - name: "Cold Traffic"
+    campaign_types: ["COLD", "CBO", "ABO"]
+
+  - name: "VSL View"
+    campaign_types: ["VSL", "VIDEO"]
+
+  - name: "Challenge Optin"
+    campaign_types: ["WARM", "LLA"]
+
+  - name: "Purchase"
+    campaign_types: ["RET", "RETARGET"]
+
+# Notes
+notes: |
+  Funil VSL Challenge para Brez Scales.
+  Campanhas devem usar {VSL_CHALLENGE} no nome.
+  Exemplo: {VSL_CHALLENGE} - COLD - Hook Principal

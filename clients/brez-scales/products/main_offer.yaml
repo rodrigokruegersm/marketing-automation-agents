@@ -1,0 +1,59 @@
+# Main Product Configuration
+# Brez Scales - Primary Offer
+
+product:
+  id: "brez_main_offer"
+  name: "Brez Scales Main Offer"
+  platform: "whop"  # Based on client config
+  platform_product_id: ""  # Fill with actual Whop product ID
+
+  # Pricing
+  price: 997.00
+  currency: "USD"
+
+  # Funnel mapping
+  funnel_tag: "VSL_CHALLENGE"  # Maps to {VSL_CHALLENGE} in campaign names
+  funnel_position: "main"
+
+  # Product economics
+  cost_of_goods: 0  # Digital product
+  fulfillment_cost: 0
+  platform_fee_percent: 3.0  # Whop fee
+  affiliate_commission_percent: 0
+
+  # LTV data
+  average_ltv: 1500  # Average customer lifetime value
+  ltv_months: 12
+
+  # Optimization thresholds (calculated from product price)
+  # target_cpp will be auto-calculated if not set
+  # target_cpp: 200  # Max acceptable cost per purchase
+  target_roas: 2.5  # Minimum acceptable ROAS
+
+  # Offers/variations
+  offers:
+    - id: "main_checkout"
+      name: "Standard Checkout"
+      price: 997.00
+      checkout_url: ""
+
+    - id: "payment_plan"
+      name: "Payment Plan (3x)"
+      price: 397.00
+      is_payment_plan: true
+      installments: 3
+      total_value: 1191.00
+
+# Notes
+notes: |
+  Main product for Brez Scales VSL Challenge funnel.
+  Sold via Whop platform.
+
+  CPP Analysis:
+  - Product price: $997
+  - Platform fee (3%): $29.91
+  - Net revenue: $967.09
+  - Breakeven CPP: $967.09
+  - Target CPP (2.5x ROAS): $386.84
+
+  Any CPP below $386.84 means profitable at 2.5x ROAS target.

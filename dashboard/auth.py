@@ -51,7 +51,7 @@ def check_password() -> bool:
 def render_login_page(callback):
     """Render the login page with Adlytics branding"""
 
-    # Custom CSS for login page
+    # Custom CSS for login page - DARK MODE
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -64,10 +64,11 @@ def render_login_page(callback):
             max-width: 400px;
             margin: 0 auto;
             padding: 3rem;
-            background: #FFFFFF;
+            background: #1E293B;
             border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .login-logo {
@@ -82,35 +83,39 @@ def render_login_page(callback):
         }
 
         .login-logo-lytics {
-            color: #0A1628;
+            color: #FFFFFF;
         }
 
         .login-tagline {
-            color: #64748B;
+            color: #94A3B8;
             font-size: 1rem;
             margin-bottom: 2rem;
         }
 
         .login-title {
-            color: #1E293B;
+            color: #FFFFFF;
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 1.5rem;
         }
 
-        /* Override Streamlit input styles */
+        /* Override Streamlit input styles - DARK */
         .stTextInput > div > div > input {
-            background: #F8FAFC !important;
-            border: 2px solid #E2E8F0 !important;
+            background: #0A1628 !important;
+            border: 2px solid #334155 !important;
             border-radius: 8px !important;
             padding: 0.75rem 1rem !important;
             font-size: 1rem !important;
-            color: #0A1628 !important;
+            color: #FFFFFF !important;
+        }
+
+        .stTextInput > div > div > input::placeholder {
+            color: #64748B !important;
         }
 
         .stTextInput > div > div > input:focus {
             border-color: #0066FF !important;
-            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1) !important;
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2) !important;
         }
 
         .stButton > button {
@@ -133,7 +138,7 @@ def render_login_page(callback):
 
         .login-footer {
             margin-top: 2rem;
-            color: #94A3B8;
+            color: #64748B;
             font-size: 0.875rem;
         }
 
@@ -145,6 +150,11 @@ def render_login_page(callback):
             background: transparent !important;
             border: none !important;
             padding: 0 !important;
+        }
+
+        /* All text white */
+        .stMarkdown, p, span, label, .stTextInput label {
+            color: #FFFFFF !important;
         }
     </style>
     """, unsafe_allow_html=True)
