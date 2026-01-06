@@ -9,8 +9,8 @@
 |-----|-------|--------|
 | ROAS | 0.53x | 🔴 |
 | Revenue | $10,552.00 | - |
-| Spend | $19,871.25 | - |
-| Profit | $-9,319.25 | 🔴 |
+| Spend | $19,872.37 | - |
+| Profit | $-9,320.37 | 🔴 |
 | CPP | $74.15 | 🔴 |
 | CTR | 2.01% | 🟢 |
 | Frequency | 3.68 | 🔴 |
@@ -36,7 +36,7 @@
   - Action: `PREPARE_NEW_CREATIVES`
   - Urgency: within_24h
 
-- 🟡 **LP_VIEW_RATE**: LP_VIEW_RATE: 37.09 triggered WARNING threshold (< 40)
+- 🟡 **LP_VIEW_RATE**: LP_VIEW_RATE: 37.08 triggered WARNING threshold (< 40)
   - Action: `OPTIMIZE_LANDING`
   - Urgency: within_24h
 
@@ -53,10 +53,10 @@
 
 ## Financial Summary
 
-- **Gross Profit**: $-9,319.25
+- **Gross Profit**: $-9,320.37
 - **Margin**: -88.3%
-- **Commission (20%)**: $-1,863.85
+- **Commission (20%)**: $-1,864.07
 
 ---
 
-*Generated: 2026-01-06 13:52:13*
+*Generated: 2026-01-06 14:53:28*
