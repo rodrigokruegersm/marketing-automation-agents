@@ -2148,5 +2148,35 @@
     "agent": "data-pulse",
     "command": "audit_page_speed",
     "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-10T14:46:14.983933",
+    "kpi": "roas",
+    "value": 0.3261724910569919,
+    "level": "critical",
+    "action": "PAUSE_AND_REVIEW",
+    "agent": "ad-launcher",
+    "command": "pause_underperforming",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-10T14:46:14.984072",
+    "kpi": "cpp",
+    "value": 164.79717532467532,
+    "level": "critical",
+    "action": "URGENT_OPTIMIZATION",
+    "agent": "data-pulse",
+    "command": "identify_cpp_issues",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-10T14:46:14.984155",
+    "kpi": "lp_view_rate",
+    "value": 15.265826162364085,
+    "level": "critical",
+    "action": "PAGE_SPEED_AUDIT",
+    "agent": "data-pulse",
+    "command": "audit_page_speed",
+    "urgency": "immediate"
   }
 ]
