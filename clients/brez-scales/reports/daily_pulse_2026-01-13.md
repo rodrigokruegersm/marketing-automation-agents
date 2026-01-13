@@ -1,0 +1,54 @@
+# Daily Pulse - 2026-01-13
+## Status: 🔴 CRITICAL
+
+---
+
+## Key Metrics
+
+| KPI | Value | Status |
+|-----|-------|--------|
+| ROAS | 0.25x | 🔴 |
+| Revenue | $12,400.00 | - |
+| Spend | $48,745.53 | - |
+| Profit | $-36,345.53 | 🔴 |
+| CPP | $253.88 | 🔴 |
+| CTR | 2.62% | 🟢 |
+| Frequency | 2.74 | 🔴 |
+| Purchases | 192 | - |
+
+---
+
+## Threshold Alerts
+
+- 🔴 **ROAS**: ROAS: 0.25 triggered CRITICAL threshold (< 1.5)
+  - Action: `PAUSE_AND_REVIEW`
+  - Urgency: immediate
+
+- 🔴 **CPP**: CPP: 253.88 triggered CRITICAL threshold (> 30)
+  - Action: `URGENT_OPTIMIZATION`
+  - Urgency: immediate
+
+- 🟢 **CTR**: CTR: 2.62 triggered GOOD threshold (>= 2.0)
+  - Action: `MAINTAIN`
+  - Urgency: none
+
+- 🔴 **LP_VIEW_RATE**: LP_VIEW_RATE: 20.84 triggered CRITICAL threshold (< 30)
+  - Action: `PAGE_SPEED_AUDIT`
+  - Urgency: immediate
+
+- 🔴 **CHECKOUT_RATE**: CHECKOUT_RATE: 2.16 triggered CRITICAL threshold (< 3)
+  - Action: `LP_COPY_REVIEW`
+  - Urgency: immediate
+
+
+---
+
+## Financial Summary
+
+- **Gross Profit**: $-36,345.53
+- **Margin**: -293.1%
+- **Commission (20%)**: $-7,269.11
+
+---
+
+*Generated: 2026-01-13 13:54:12*
