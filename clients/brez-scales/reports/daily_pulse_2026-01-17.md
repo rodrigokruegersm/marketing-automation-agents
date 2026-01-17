@@ -9,9 +9,9 @@
 |-----|-------|--------|
 | ROAS | 0.45x | 🔴 |
 | Revenue | $15,301.00 | - |
-| Spend | $33,734.87 | - |
-| Profit | $-18,433.87 | 🔴 |
-| CPP | $132.81 | 🔴 |
+| Spend | $33,735.33 | - |
+| Profit | $-18,434.33 | 🔴 |
+| CPP | $132.82 | 🔴 |
 | CTR | 2.03% | 🟢 |
 | Frequency | 2.28 | 🟢 |
 | Purchases | 254 | - |
@@ -24,7 +24,7 @@
   - Action: `PAUSE_AND_REVIEW`
   - Urgency: immediate
 
-- 🔴 **CPP**: CPP: 132.81 triggered CRITICAL threshold (> 30)
+- 🔴 **CPP**: CPP: 132.82 triggered CRITICAL threshold (> 30)
   - Action: `URGENT_OPTIMIZATION`
   - Urgency: immediate
 
@@ -53,10 +53,10 @@
 
 ## Financial Summary
 
-- **Gross Profit**: $-18,433.87
+- **Gross Profit**: $-18,434.33
 - **Margin**: -120.5%
-- **Commission (20%)**: $-3,686.77
+- **Commission (20%)**: $-3,686.87
 
 ---
 
-*Generated: 2026-01-17 20:40:23*
+*Generated: 2026-01-17 21:32:16*
