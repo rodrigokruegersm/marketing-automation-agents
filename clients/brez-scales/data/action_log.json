@@ -7118,5 +7118,55 @@
     "agent": "copy-forge",
     "command": "generate_lp_variants",
     "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-23T19:28:43.242560",
+    "kpi": "roas",
+    "value": 0.5541153283534999,
+    "level": "critical",
+    "action": "PAUSE_AND_REVIEW",
+    "agent": "ad-launcher",
+    "command": "pause_underperforming",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-23T19:28:43.242738",
+    "kpi": "cpp",
+    "value": 127.552787456446,
+    "level": "critical",
+    "action": "URGENT_OPTIMIZATION",
+    "agent": "data-pulse",
+    "command": "identify_cpp_issues",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-23T19:28:43.242841",
+    "kpi": "ctr",
+    "value": 1.317999,
+    "level": "warning",
+    "action": "TEST_NEW_HOOKS",
+    "agent": "copy-forge",
+    "command": "generate_hooks",
+    "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-23T19:28:43.242933",
+    "kpi": "lp_view_rate",
+    "value": 37.91642408952713,
+    "level": "warning",
+    "action": "OPTIMIZE_LANDING",
+    "agent": "data-pulse",
+    "command": "analyze_bounce",
+    "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-23T19:28:43.243010",
+    "kpi": "checkout_rate",
+    "value": 3.250021325599249,
+    "level": "warning",
+    "action": "TEST_LP_ELEMENTS",
+    "agent": "copy-forge",
+    "command": "generate_lp_variants",
+    "urgency": "within_24h"
   }
 ]
