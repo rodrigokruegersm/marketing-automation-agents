@@ -9,11 +9,11 @@
 |-----|-------|--------|
 | ROAS | 0.44x | 🔴 |
 | Revenue | $17,591.62 | - |
-| Spend | $39,605.51 | - |
-| Profit | $-22,013.89 | 🔴 |
+| Spend | $39,607.63 | - |
+| Profit | $-22,016.01 | 🔴 |
 | CPP | $116.15 | 🔴 |
 | CTR | 1.39% | 🟡 |
-| Frequency | 2.21 | 🟢 |
+| Frequency | 2.22 | 🟢 |
 | Purchases | 341 | - |
 
 ---
@@ -32,7 +32,7 @@
   - Action: `TEST_NEW_HOOKS`
   - Urgency: within_24h
 
-- 🟢 **FREQUENCY**: FREQUENCY: 2.21 triggered GOOD threshold (<= 2.5)
+- 🟢 **FREQUENCY**: FREQUENCY: 2.22 triggered GOOD threshold (<= 2.5)
   - Action: `MAINTAIN`
   - Urgency: none
 
@@ -49,10 +49,10 @@
 
 ## Financial Summary
 
-- **Gross Profit**: $-22,013.89
-- **Margin**: -125.1%
-- **Commission (20%)**: $-4,402.78
+- **Gross Profit**: $-22,016.01
+- **Margin**: -125.2%
+- **Commission (20%)**: $-4,403.20
 
 ---
 
-*Generated: 2026-01-26 13:01:44*
+*Generated: 2026-01-26 14:35:25*
