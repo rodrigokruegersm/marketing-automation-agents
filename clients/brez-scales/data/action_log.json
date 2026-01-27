@@ -8698,5 +8698,45 @@
     "agent": "copy-forge",
     "command": "generate_lp_variants",
     "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-27T13:03:47.069754",
+    "kpi": "roas",
+    "value": 0.47850309863877516,
+    "level": "critical",
+    "action": "PAUSE_AND_REVIEW",
+    "agent": "ad-launcher",
+    "command": "pause_underperforming",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-27T13:03:47.069894",
+    "kpi": "cpp",
+    "value": 104.2016301703163,
+    "level": "critical",
+    "action": "URGENT_OPTIMIZATION",
+    "agent": "data-pulse",
+    "command": "identify_cpp_issues",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-27T13:03:47.069976",
+    "kpi": "ctr",
+    "value": 1.441926,
+    "level": "warning",
+    "action": "TEST_NEW_HOOKS",
+    "agent": "copy-forge",
+    "command": "generate_hooks",
+    "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-27T13:03:47.070052",
+    "kpi": "checkout_rate",
+    "value": 3.155730873937441,
+    "level": "warning",
+    "action": "TEST_LP_ELEMENTS",
+    "agent": "copy-forge",
+    "command": "generate_lp_variants",
+    "urgency": "within_24h"
   }
 ]
