@@ -9568,5 +9568,35 @@
     "agent": "data-pulse",
     "command": "analyze_drop_off",
     "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-01-29T19:35:13.482808",
+    "kpi": "roas",
+    "value": 0.641049947706036,
+    "level": "critical",
+    "action": "PAUSE_AND_REVIEW",
+    "agent": "ad-launcher",
+    "command": "pause_underperforming",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-29T19:35:13.482954",
+    "kpi": "cpp",
+    "value": 83.02424074074074,
+    "level": "critical",
+    "action": "URGENT_OPTIMIZATION",
+    "agent": "data-pulse",
+    "command": "identify_cpp_issues",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-01-29T19:35:13.483044",
+    "kpi": "close_rate",
+    "value": 49.72375690607735,
+    "level": "warning",
+    "action": "PAYMENT_REVIEW",
+    "agent": "data-pulse",
+    "command": "analyze_drop_off",
+    "urgency": "within_24h"
   }
 ]
