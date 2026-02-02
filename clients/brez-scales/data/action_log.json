@@ -11258,5 +11258,55 @@
     "agent": "data-pulse",
     "command": "audit_checkout",
     "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-02T16:50:39.843383",
+    "kpi": "roas",
+    "value": 0.42873902995711205,
+    "level": "critical",
+    "action": "PAUSE_AND_REVIEW",
+    "agent": "ad-launcher",
+    "command": "pause_underperforming",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-02T16:50:39.843543",
+    "kpi": "cpp",
+    "value": 255.9226164874552,
+    "level": "critical",
+    "action": "URGENT_OPTIMIZATION",
+    "agent": "data-pulse",
+    "command": "identify_cpp_issues",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-02T16:50:39.843632",
+    "kpi": "ctr",
+    "value": 1.29162,
+    "level": "warning",
+    "action": "TEST_NEW_HOOKS",
+    "agent": "copy-forge",
+    "command": "generate_hooks",
+    "urgency": "within_24h"
+  },
+  {
+    "timestamp": "2026-02-02T16:50:39.843719",
+    "kpi": "lp_view_rate",
+    "value": 0.3367609717444939,
+    "level": "critical",
+    "action": "PAGE_SPEED_AUDIT",
+    "agent": "data-pulse",
+    "command": "audit_page_speed",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-02T16:50:39.843807",
+    "kpi": "close_rate",
+    "value": 38.912133891213394,
+    "level": "critical",
+    "action": "CHECKOUT_AUDIT",
+    "agent": "data-pulse",
+    "command": "audit_checkout",
+    "urgency": "immediate"
   }
 ]
