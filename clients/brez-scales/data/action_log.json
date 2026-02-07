@@ -13208,5 +13208,55 @@
     "agent": "data-pulse",
     "command": "audit_checkout",
     "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-07T15:31:54.841067",
+    "kpi": "roas",
+    "value": 0,
+    "level": "critical",
+    "action": "PAUSE_AND_REVIEW",
+    "agent": "ad-launcher",
+    "command": "pause_underperforming",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-07T15:31:54.841219",
+    "kpi": "ctr",
+    "value": 0.0,
+    "level": "critical",
+    "action": "CREATIVE_EMERGENCY",
+    "agent": "copy-forge",
+    "command": "emergency_hooks",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-07T15:31:54.841363",
+    "kpi": "lp_view_rate",
+    "value": 0,
+    "level": "critical",
+    "action": "PAGE_SPEED_AUDIT",
+    "agent": "data-pulse",
+    "command": "audit_page_speed",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-07T15:31:54.841460",
+    "kpi": "checkout_rate",
+    "value": 0,
+    "level": "critical",
+    "action": "LP_COPY_REVIEW",
+    "agent": "copy-forge",
+    "command": "analyze_lp_copy",
+    "urgency": "immediate"
+  },
+  {
+    "timestamp": "2026-02-07T15:31:54.841549",
+    "kpi": "close_rate",
+    "value": 17.80821917808219,
+    "level": "critical",
+    "action": "CHECKOUT_AUDIT",
+    "agent": "data-pulse",
+    "command": "audit_checkout",
+    "urgency": "immediate"
   }
 ]
