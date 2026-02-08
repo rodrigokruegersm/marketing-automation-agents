@@ -1,0 +1,62 @@
+# Daily Pulse - 2026-02-08
+## Status: 🔴 CRITICAL
+
+---
+
+## Key Metrics
+
+| KPI | Value | Status |
+|-----|-------|--------|
+| ROAS | 0.00x | 🔴 |
+| Revenue | $36,437.00 | - |
+| Spend | $0.00 | - |
+| Profit | $36,437.00 | 🟢 |
+| CPP | $0.00 | 🟢 |
+| CTR | 0.00% | 🟡 |
+| Frequency | 0.00 | 🟢 |
+| Purchases | 32 | - |
+
+---
+
+## Threshold Alerts
+
+- 🔴 **ROAS**: ROAS: 0.00 triggered CRITICAL threshold (< 1.5)
+  - Action: `PAUSE_AND_REVIEW`
+  - Urgency: immediate
+
+- 🟢 **CPP**: CPP: 0.00 triggered GOOD threshold (<= 20)
+  - Action: `MAINTAIN`
+  - Urgency: none
+
+- 🔴 **CTR**: CTR: 0.00 triggered CRITICAL threshold (< 1.0)
+  - Action: `CREATIVE_EMERGENCY`
+  - Urgency: immediate
+
+- 🟢 **FREQUENCY**: FREQUENCY: 0.00 triggered GOOD threshold (<= 2.5)
+  - Action: `MAINTAIN`
+  - Urgency: none
+
+- 🔴 **LP_VIEW_RATE**: LP_VIEW_RATE: 0.00 triggered CRITICAL threshold (< 30)
+  - Action: `PAGE_SPEED_AUDIT`
+  - Urgency: immediate
+
+- 🔴 **CHECKOUT_RATE**: CHECKOUT_RATE: 0.00 triggered CRITICAL threshold (< 3)
+  - Action: `LP_COPY_REVIEW`
+  - Urgency: immediate
+
+- 🔴 **CLOSE_RATE**: CLOSE_RATE: 20.13 triggered CRITICAL threshold (< 40)
+  - Action: `CHECKOUT_AUDIT`
+  - Urgency: immediate
+
+
+---
+
+## Financial Summary
+
+- **Gross Profit**: $36,437.00
+- **Margin**: 100.0%
+- **Commission (20%)**: $7,287.40
+
+---
+
+*Generated: 2026-02-08 12:58:10*
